@@ -1,1456 +1,552 @@
 
-/* ==========================================
-   FIRESENSE - THERMAL MONITORING DASHBOARD
-   Main Stylesheet
-   ========================================== */
-
-/* GLOBAL VARIABLES */
 :root {
-    color-scheme: dark;
-
-    --bg: #0b111b;
-    --side: #0d1420;
-    --panel: #131c2a;
-    --panel2: #151f2e;
-
-    --line: #253246;
-    --text: #eef3fa;
-    --muted: #8999b0;
-    --muted2: #62738c;
-
-    --accent: #4e9df8;
-    --mint: #37d7ab;
-    --orange: #ff9f60;
-
-    font-family: Inter, ui-sans-serif, system-ui,
-        -apple-system, "Segoe UI", Arial, sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #25303b;
+  background: #f4f5f6;
+  font-synthesis: none;
 }
 
-* {
-    box-sizing: border-box;
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .5; }
+
+.shell {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 0 28px;
 }
-
-html {
-    scroll-behavior: smooth;
-}
-
-body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-}
-
-button,
-input,
-select {
-    font-family: inherit;
-}
-
-/* ==========================================
-   APPLICATION LAYOUT
-   ========================================== */
-
-.app {
-    display: flex;
-    min-height: 100vh;
-}
-
-.sidebar {
-    width: 257px;
-    min-width: 257px;
-    min-height: 100vh;
-
-    background: var(--side);
-    border-right: 1px solid var(--line);
-
-    padding: 27px 19px;
-
-    display: flex;
-    flex-direction: column;
-}
-
-.main {
-    width: calc(100% - 257px);
-    min-width: 0;
-    padding: 0 34px 28px;
-}
-
-/* ==========================================
-   SIDEBAR BRAND
-   ========================================== */
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    margin-bottom: 51px;
-    padding: 0 7px;
-}
-
-.brand-icon {
-    width: 41px;
-    height: 41px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 12px;
-
-    background: linear-gradient(
-        135deg,
-        #fb704c,
-        #ffbc56
-    );
-
-    color: white;
-    font-size: 24px;
-
-    box-shadow: 0 5px 24px #ff8c3b24;
-}
-
-.brand strong {
-    display: block;
-    font-size: 21px;
-    letter-spacing: -0.9px;
-}
-
-.brand small {
-    display: block;
-    margin-top: 3px;
-
-    color: var(--muted2);
-
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 1.9px;
-}
-
-/* ==========================================
-   SIDEBAR NAVIGATION
-   ========================================== */
-
-.aside-section-label {
-    padding: 0 15px;
-    margin-bottom: 14px;
-
-    color: var(--muted2);
-
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 1.8px;
-}
-
-.sidebar nav {
-    display: grid;
-    gap: 5px;
-    margin-bottom: 38px;
-}
-
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    padding: 12px 13px;
-
-    color: #91a3bb;
-    text-decoration: none;
-
-    font-size: 12px;
-    font-weight: 650;
-
-    border-radius: 9px;
-    transition: background 0.2s ease;
-}
-
-.nav-item:hover {
-    background: #172335;
-}
-
-.nav-item.active {
-    background: #1b314d;
-    color: #87bafa;
-
-    box-shadow: inset 3px 0 #5b9ef2;
-}
-
-.nav-symbol {
-    width: 23px;
-    text-align: center;
-
-    font-size: 18px;
-    line-height: 1;
-}
-
-.nav-dot {
-    width: 6px;
-    height: 6px;
-
-    margin-left: auto;
-
-    background: #5fbcff;
-    border-radius: 50%;
-}
-
-/* ==========================================
-   CONNECTED MODULES
-   ========================================== */
-
-.module {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    padding: 10px 9px;
-    margin-bottom: 7px;
-
-    border: 1px solid #1f2b3b;
-    border-radius: 10px;
-}
-
-.module-icon {
-    width: 25px;
-    color: #7298cb;
-    font-size: 20px;
-    text-align: center;
-}
-
-.module div {
-    flex: 1;
-}
-
-.module strong {
-    display: block;
-    font-size: 12px;
-}
-
-.module small {
-    display: block;
-    margin-top: 4px;
-
-    color: var(--muted2);
-    font-size: 10px;
-}
-
-.mini-status {
-    width: 7px;
-    height: 7px;
-
-    border-radius: 50%;
-    background: #697b95;
-}
-
-.mini-status.waiting {
-    background: #ffb35c;
-}
-
-.mini-status.live {
-    background: #2ed5a0;
-    box-shadow: 0 0 8px #2ed5a055;
-}
-
-.mini-status.muted {
-    background: #48566d;
-}
-
-/* ==========================================
-   SIDEBAR DEVELOPMENT STATUS
-   ========================================== */
-
-.side-bottom {
-    margin-top: auto;
-    padding: 17px;
-
-    background: #141f2f;
-
-    border: 1px solid #2b3b4f;
-    border-radius: 12px;
-}
-
-.side-bottom-top {
-    color: #78cfb7;
-
-    font-size: 9px;
-    font-weight: 750;
-    letter-spacing: 1.2px;
-}
-
-.tiny-ring {
-    display: inline-block;
-
-    width: 7px;
-    height: 7px;
-
-    margin-right: 5px;
-
-    border: 1px solid #70d6b7;
-    border-radius: 50%;
-}
-
-.side-bottom-main {
-    margin-top: 12px;
-
-    font-size: 14px;
-    font-weight: 750;
-}
-
-.side-bottom p {
-    margin: 8px 0 14px;
-
-    color: var(--muted);
-    font-size: 11px;
-    line-height: 1.65;
-}
-
-.progress-track {
-    height: 4px;
-    background: #27384d;
-    border-radius: 5px;
-}
-
-.progress-fill {
-    width: 18%;
-    height: 100%;
-
-    background: #4fceb1;
-    border-radius: 5px;
-}
-
-/* ==========================================
-   TOP BAR
-   ========================================== */
 
 .topbar {
-    height: 67px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    border-bottom: 1px solid #202c3c;
+  min-height: 112px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid #d8dce0;
 }
 
-.breadcrumbs {
-    color: #8393a9;
-
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 1.4px;
-}
-
-.breadcrumbs span {
-    padding: 0 11px;
-    color: #384b60;
-}
-
-.topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 23px;
-}
-
-.date {
-    color: #8797ad;
-
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.server-pill {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    padding: 8px 12px;
-
-    border: 1px solid #334252;
-    border-radius: 100px;
-
-    color: #bccbda;
-
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.server-pill.connected {
-    border-color: #2b665c;
-    background: #16302d;
-    color: #81ddbc;
-}
-
-.server-pill.disconnected {
-    border-color: #6b403e;
-    background: #342224;
-    color: #ffc09f;
-}
-
-.status-light {
-    width: 7px;
-    height: 7px;
-
-    border-radius: 50%;
-    background: #e5ac64;
-}
-
-.connected .status-light {
-    background: #48ddad;
-    box-shadow: 0 0 6px #48ddad66;
-}
-
-.disconnected .status-light {
-    background: #fd9069;
-}
-
-/* ==========================================
-   DASHBOARD HEADER
-   ========================================== */
-
-.page-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-
-    padding: 33px 0 26px;
-}
-
-.eyebrow,
-.section-tag {
-    color: #65a9ef;
-
-    font-size: 10px;
-    font-weight: 850;
-    letter-spacing: 1.5px;
-}
-
-.eyebrow-rule {
-    display: inline-block;
-
-    width: 41px;
-    height: 1px;
-
-    margin-left: 7px;
-    vertical-align: middle;
-
-    background: #4d7eae;
+.eyebrow {
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 1.4px;
+  color: #71808d;
 }
 
 h1 {
-    margin: 8px 0 7px;
-
-    font-size: 31px;
-    font-weight: 800;
-
-    line-height: 1.2;
-    letter-spacing: -1.2px;
+  font-size: 23px;
+  letter-spacing: -.5px;
+  margin: 8px 0 4px;
+  font-weight: 720;
 }
 
-h1 span {
-    color: #8b9eb4;
-    font-weight: 450;
+h2 {
+  font-size: 17px;
+  margin: 7px 0 0;
+  font-weight: 700;
 }
 
-.page-heading p {
-    margin: 0;
-
-    color: var(--muted);
-    font-size: 12px;
-}
-
-.head-metadata {
-    text-align: right;
-}
-
-.label {
-    color: var(--muted2);
-
-    font-size: 9px;
-    font-weight: 850;
-    letter-spacing: 1.2px;
-}
-
-.source-badge {
-    display: block;
-
-    margin-top: 9px;
-    padding: 8px 12px;
-
-    background: #172235;
-    border: 1px solid #435068;
-    border-radius: 5px;
-
-    color: #a9b6c8;
-
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 1.1px;
-}
-
-.source-badge.demo {
-    background: #493522;
-    border-color: #8c6336;
-    color: #f8cb79;
-}
-
-.source-badge.hardware {
-    background: #1a3a33;
-    border-color: #327963;
-    color: #80e2bd;
-}
-
-/* ==========================================
-   TEMPERATURE METRIC CARDS
-   ========================================== */
-
-.metrics {
-    display: grid;
-
-    grid-template-columns: repeat(
-        4,
-        minmax(0, 1fr)
-    );
-
-    gap: 16px;
-    margin-bottom: 18px;
-}
-
-.metric-card,
-.panel {
-    background: var(--panel);
-
-    border: 1px solid var(--line);
-    border-radius: 12px;
-
-    box-shadow: 0 7px 20px #050b160f;
-}
-
-.metric-card {
-    padding: 19px 20px;
-}
-
-.metric-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    color: #94a5bb;
-
-    font-size: 9px;
-    font-weight: 850;
-    letter-spacing: 1.1px;
-}
-
-.metric-icon {
-    width: 29px;
-    height: 29px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 8px;
-    font-size: 18px;
-}
-
-.heat {
-    background: #442e28;
-    color: #ffab75;
-}
-
-.cool {
-    background: #223b52;
-    color: #6fbaff;
-}
-
-.mean {
-    background: #27334e;
-    color: #bba6ff;
-}
-
-.frame {
-    background: #203c36;
-    color: #6cddae;
-}
-
-.metric-value {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-
-    margin: 15px 0 12px;
-
-    font-size: 32px;
-    font-weight: 800;
-    letter-spacing: -1.4px;
-
-    font-variant-numeric: tabular-nums;
-}
-
-.metric-value small {
-    color: var(--muted);
-
-    font-size: 17px;
-    font-weight: 550;
-}
-
-.metric-bottom {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    color: var(--muted);
-    font-size: 10px;
-}
-
-.metric-dot {
-    display: inline-block;
-
-    width: 6px;
-    height: 6px;
-
-    flex: none;
-    border-radius: 50%;
-}
-
-.metric-dot.hot {
-    background: #ff995b;
-}
-
-.metric-dot.cool {
-    background: #73aeef;
-}
-
-.metric-dot.mean {
-    background: #ac98ff;
-}
-
-.metric-dot.stream {
-    background: #55d7ae;
-}
-
-/* ==========================================
-   DASHBOARD PANEL GRID
-   ========================================== */
-
-.content-grid {
-    display: grid;
-
-    grid-template-columns:
-        minmax(0, 1.83fr)
-        minmax(290px, 1fr);
-
-    gap: 18px;
-}
-
-.panel {
-    padding: 21px 22px;
-    min-width: 0;
-}
-
-.panel-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-
-    margin-bottom: 21px;
-}
-
-.panel-head h2 {
-    margin: 8px 0 4px;
-
-    font-size: 16px;
-    letter-spacing: -0.2px;
-}
-
-.panel-head p {
-    margin: 0;
-
-    color: var(--muted);
-    font-size: 11px;
-}
-
-/* ==========================================
-   LIVE CAMERA STATUS
-   ========================================== */
-
-.feed-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    padding: 9px 11px;
-
-    background: #423221;
-    border: 1px solid #625139;
-    border-radius: 5px;
-
-    color: #efbf75;
-
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 0.9px;
-
-    white-space: nowrap;
-}
-
-.feed-badge.live {
-    background: #193d36;
-    border-color: #3a806c;
-    color: #72e3ba;
-}
-
-.badge-dot {
-    width: 6px;
-    height: 6px;
-
-    border-radius: 50%;
-    background: currentColor;
-}
-
-/* ==========================================
-   THERMAL CAMERA CONTROLS
-   ========================================== */
-
-.thermal-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-
-    margin-bottom: 13px;
-}
-
-.palette-label,
-.toolbar-right {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-
-    color: #96a7bc;
-
-    font-size: 10px;
-    font-weight: 750;
-    letter-spacing: 0.7px;
-}
-
-.palette-label select,
-.toolbar-right input {
-    background: #1c2838;
-    border: 1px solid #35455b;
-    border-radius: 6px;
-
-    color: #cbd8e9;
-
-    padding: 7px 9px;
-
-    font: inherit;
-    outline: none;
-}
-
-.palette-label select {
-    min-width: 103px;
-    letter-spacing: 0;
-}
-
-.toolbar-right input {
-    width: 51px;
-    text-align: center;
-    appearance: textfield;
-    letter-spacing: 0;
-}
-
-.toolbar-right input::-webkit-inner-spin-button,
-.toolbar-right input::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-/* ==========================================
-   THERMAL CAMERA VIEWPORT
-   ========================================== */
-
-.viewport {
-    position: relative;
-
-    background: #090e18;
-
-    border: 1px solid #26374d;
-    border-radius: 7px;
-
-    overflow: hidden;
-    aspect-ratio: 4 / 3;
-}
-
-.viewport canvas {
-    display: block;
-
-    width: 100%;
-    height: 100%;
-
-    object-fit: fill;
-}
-
-.viewport-corner {
-    position: absolute;
-
-    padding: 6px 9px;
-
-    font-family: ui-monospace,
-        SFMono-Regular, Consolas, monospace;
-
-    font-size: 9px;
-    font-weight: 750;
-    letter-spacing: 0.8px;
-
-    color: #d2dbe9;
-    background: #0a1227a8;
-
-    border: 1px solid #4b5b7470;
-    pointer-events: none;
-}
-
-.top-left {
-    left: 15px;
-    top: 14px;
+p { margin: 0; }
+
+.identity p,
+.panel-heading p {
+  font-size: 12px;
+  color: #71808d;
+  margin-top: 7px;
 }
 
 .top-right {
-    right: 15px;
-    top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
-.bottom-left {
-    left: 15px;
-    bottom: 13px;
+.clock {
+  font-size: 12px;
+  color: #536171;
+  font-variant-numeric: tabular-nums;
 }
 
-.bottom-right {
-    right: 15px;
-    bottom: 13px;
+.status {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #d5dbe0;
+  padding: 6px 9px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .5px;
+  white-space: nowrap;
 }
 
-/* ==========================================
-   NO FRAME PLACEHOLDER
-   ========================================== */
-
-.empty-state {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    text-align: center;
-    padding: 25px;
-
-    background: radial-gradient(
-        circle at 50% 50%,
-        #1a2b3e,
-        #0a111c
-    );
+.status-off {
+  background: #f0f2f4;
+  color: #697581;
 }
 
-.empty-state[hidden] {
-    display: none;
+.status-on {
+  background: #e7f3ee;
+  border-color: #c3dfd0;
+  color: #236749;
 }
 
-.empty-icon {
-    font-size: 50px;
-    color: #637d9e;
-    margin-bottom: 8px;
+.status-warning {
+  background: #fff4df;
+  border-color: #e8d09b;
+  color: #8d5b08;
 }
 
-.empty-state strong {
-    font-size: 17px;
+main { padding: 22px 0 30px; }
+
+.overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
-.empty-state p {
-    max-width: 305px;
-
-    color: #91a2ba;
-    font-size: 12px;
-    line-height: 1.6;
+.metric,
+.panel {
+  background: #fff;
+  border: 1px solid #dce0e4;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .025);
 }
 
-/* ==========================================
-   SIMULATED FRAME WATERMARK
-   ========================================== */
-
-.demo-watermark {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-    z-index: 1;
-
-    transform: translate(-50%, -50%);
-
-    white-space: nowrap;
-    pointer-events: none;
-
-    background: #2a160abb;
-    border: 1px solid #f8b55470;
-    border-radius: 4px;
-
-    color: #ffcf8a;
-
-    font-size: 15px;
-    font-weight: 900;
-    letter-spacing: 2px;
-
-    padding: 9px 16px;
+.metric {
+  padding: 19px 20px;
+  min-height: 128px;
 }
 
-.demo-watermark[hidden] {
-    display: none;
+.metric-label {
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 1px;
+  color: #687786;
+  display: block;
 }
 
-/* ==========================================
-   TEMPERATURE COLOR SCALE
-   ========================================== */
-
-.colorbar-line {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-
-    margin-top: 15px;
-
-    color: #8da0b6;
-
-    font-family: ui-monospace,
-        Consolas, monospace;
-
-    font-size: 10px;
+.metric-value {
+  display: block;
+  font-size: 32px;
+  font-weight: 720;
+  letter-spacing: -1px;
+  margin: 15px 0 9px;
+  font-variant-numeric: tabular-nums;
 }
 
-.colorbar {
-    flex: 1;
-    height: 8px;
-
-    border-radius: 30px;
-
-    background: linear-gradient(
-        to right,
-        #0c0d26,
-        #452783,
-        #bd1f44,
-        #f29f50,
-        #fff6c1
-    );
+.metric-small {
+  font-size: 22px;
+  letter-spacing: -.3px;
 }
 
-/* ==========================================
-   CAMERA FOOTER AND PAUSE BUTTON
-   ========================================== */
-
-.camera-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-
-    margin-top: 14px;
-
-    color: #8b9eb4;
-    font-size: 10px;
+.unit {
+  font-size: 17px;
+  font-weight: 500;
+  color: #6d7782;
 }
 
-.small-led {
-    display: inline-block;
-
-    width: 6px;
-    height: 6px;
-
-    margin-right: 3px;
-
-    background: #6d8094;
-    border-radius: 50%;
+.metric small {
+  color: #71808d;
+  font-size: 11px;
 }
 
-.text-button {
-    padding: 8px 10px;
-
-    border: 1px solid #344961;
-    border-radius: 6px;
-
-    background: #1b2a3e;
-    color: #9ccefa;
-
-    font: inherit;
-    font-weight: 700;
-
-    cursor: pointer;
-    white-space: nowrap;
+.main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.72fr) minmax(330px, 1fr);
+  gap: 14px;
 }
 
-.text-button:hover {
-    background: #23364f;
+.panel { padding: 20px; }
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 17px;
 }
 
-/* ==========================================
-   SYSTEM DIAGNOSTICS PANEL
-   ========================================== */
+/* Thermal camera */
 
-.diagnostics-panel .panel-head {
-    margin-bottom: 30px;
+.thermal-wrap {
+  position: relative;
+  background: #e6e9ec;
+  border: 1px solid #d5dbe0;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  max-height: 490px;
 }
 
-.diag-block {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-
-    margin-bottom: 27px;
+.thermal-wrap canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: auto;
 }
 
-.diag-icon {
-    width: 36px;
-    height: 36px;
-    flex: none;
-
-    display: grid;
-    place-items: center;
-
-    background: #1d3048;
-
-    color: #82a8dc;
-
-    border: 1px solid #2b4462;
-    border-radius: 9px;
-
-    font-size: 20px;
+.thermal-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64717e;
+  font-size: 13px;
+  background: #e9edf0;
 }
 
-.diag-copy {
-    flex: 1;
-    min-width: 0;
+.thermal-placeholder[hidden] { display: none; }
+
+.scale-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 14px 0 9px;
+  font-size: 11px;
+  color: #66727e;
+  font-variant-numeric: tabular-nums;
 }
 
-.diag-copy span {
-    display: block;
-    margin-bottom: 6px;
-
-    color: #8da1ba;
-    font-size: 10px;
+.thermal-scale {
+  height: 11px;
+  flex: 1;
+  border: 1px solid #cfd4d8;
+  background: linear-gradient(
+    90deg,
+    #000080, #0000ff, #00ffff,
+    #00ff00, #ffff00, #ff0000, #800000
+  );
 }
 
-.diag-copy strong {
-    font-size: 12px;
-    font-weight: 700;
-    overflow-wrap: anywhere;
+.range-row {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e7e9ec;
 }
 
-.diag-status {
-    width: 7px;
-    height: 7px;
-
-    flex: none;
-    border-radius: 50%;
-
-    background: #ffae58;
+.range-row label {
+  font-size: 11px;
+  color: #62707e;
+  display: grid;
+  gap: 5px;
 }
 
-.diag-status.green {
-    background: #58daaf;
+.range-row input {
+  width: 100px;
+  border: 1px solid #cbd3da;
+  border-radius: 4px;
+  padding: 8px;
+  background: #fff;
+  color: #26313c;
 }
 
-.diag-status.muted {
-    background: #546378;
+.sensor-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 17px 12px;
+  padding: 18px 0;
 }
 
-/* ==========================================
-   DIAGNOSTIC DATA ROWS
-   ========================================== */
-
-.divider {
-    height: 1px;
-
-    margin: 3px 0 22px;
-    background: #2a394d;
+.sensor-details > div,
+.detail-list > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
 }
 
-.diag-extra {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-
-    margin-bottom: 16px;
+.sensor-details span,
+.detail-list span {
+  font-size: 11px;
+  color: #71808d;
 }
 
-.diag-extra strong {
-    font-family: ui-monospace,
-        Consolas, monospace;
-
-    font-size: 13px;
-    font-weight: 700;
-
-    text-align: right;
+.sensor-details strong,
+.detail-list strong {
+  font-size: 12px;
+  color: #283642;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
 }
 
-.reported-state {
-    font-weight: 800;
-    color: #aebbcf;
+.hint {
+  font-size: 11px;
+  color: #77838e;
+  border-top: 1px solid #e7e9ec;
+  padding-top: 12px;
 }
 
-.reported-state.normal {
-    color: #76dbb3;
+/* Alarm management */
+
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.reported-state.warning {
-    color: #ffcf8a;
+.alarm-panel { flex: 1; }
+
+.alarm-condition {
+  background: #f0f2f4;
+  color: #4b5a67;
+  padding: 16px;
+  border: 1px solid #dce1e5;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 750;
 }
 
-.reported-state.fire {
-    color: #ff8c77;
+.alarm-condition.fire {
+  background: #fff0ee;
+  border-color: #d74c42;
+  color: #a9271e;
 }
 
-/* ==========================================
-   DETECTION INFORMATION BOX
-   ========================================== */
-
-.info-note {
-    margin-top: 23px;
-    padding: 15px;
-
-    background: #29271f;
-
-    border: 1px solid #4a4637;
-    border-radius: 8px;
+.alarm-condition.warning {
+  background: #fff6e4;
+  border-color: #e3c278;
+  color: #8a5a08;
 }
 
-.info-note strong {
-    color: #ffcf8a;
-
-    font-size: 10px;
-    letter-spacing: 1px;
+.detail-text {
+  font-size: 12px;
+  color: #687683;
+  line-height: 1.6;
+  margin: 14px 0;
 }
 
-.info-note p {
-    margin: 7px 0 0;
-
-    color: #b9b3a2;
-
-    font-size: 10.5px;
-    line-height: 1.55;
+.alarm-controls {
+  display: grid;
+  gap: 9px;
+  margin: 16px 0;
 }
 
-/* ==========================================
-   TEMPERATURE TREND CHART
-   ========================================== */
-
-.trend-panel,
-.integration-panel {
-    min-height: 280px;
+.button {
+  padding: 11px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 720;
+  border: 1px solid #cbd3da;
 }
 
-.legend {
-    color: #a0b0c3;
-
-    font-size: 9px;
-    letter-spacing: 0.8px;
-
-    white-space: nowrap;
+.button-neutral {
+  background: #f8f9fa;
+  color: #344252;
 }
 
-.legend-dot {
-    display: inline-block;
-
-    width: 7px;
-    height: 7px;
-
-    margin-right: 7px;
-
-    background: #faac66;
-    border-radius: 50%;
+.button-primary {
+  background: #33485e;
+  color: #fff;
+  border-color: #33485e;
 }
 
-.trend-canvas-wrap {
-    height: 206px;
-    min-width: 0;
+.button-danger {
+  background: #a92d27;
+  color: #fff;
+  border-color: #a92d27;
 }
 
-.trend-canvas-wrap canvas {
-    display: block;
-
-    width: 100%;
-    height: 100%;
+.button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #7294b4;
+  outline-offset: 2px;
 }
 
-/* ==========================================
-   SYSTEM PIPELINE
-   ========================================== */
-
-.pipeline {
-    margin: 1px 0 0 4px;
+.detail-list {
+  display: grid;
+  gap: 14px;
+  padding: 16px 0;
+  border-top: 1px solid #e7e9ec;
 }
 
-.step {
-    display: flex;
-    align-items: center;
-    gap: 13px;
+.detail-list > div {
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.step-circle {
-    width: 29px;
-    height: 29px;
-    flex: none;
-
-    display: grid;
-    place-items: center;
-
-    background: #1c3f3b;
-
-    border: 1px solid #396b65;
-    border-radius: 50%;
-
-    color: #86e2c3;
-
-    font-size: 12px;
-    font-weight: 800;
+.safety-note {
+  background: #f6f7f8;
+  padding: 11px;
+  color: #65727d;
+  font-size: 11px;
+  line-height: 1.5;
+  border-left: 3px solid #9ca6af;
 }
 
-.step strong {
-    display: block;
-    font-size: 12px;
+/* DS18B20 */
+
+.ambient-reading {
+  padding: 12px 0 2px;
+  font-size: 16px;
+  color: #6d7782;
 }
 
-.step small {
-    display: block;
-    margin-top: 4px;
-
-    color: #879db5;
-    font-size: 10px;
+.ambient-reading span:first-child {
+  font-size: 48px;
+  font-weight: 720;
+  color: #273541;
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
 }
 
-.pipeline-connector {
-    height: 19px;
+.sensor-panel .detail-list { margin-top: 15px; }
 
-    margin: 3px 0 3px 18px;
-    border-left: 1px dashed #43635b;
+/* History and event table */
+
+.history-panel,
+.events-panel { margin-top: 14px; }
+
+.chart-key {
+  display: flex;
+  gap: 16px;
+  white-space: nowrap;
+  font-size: 11px;
+  color: #637180;
 }
 
-.integration-foot {
-    margin-top: 17px;
-    padding-top: 15px;
-
-    border-top: 1px solid #29394d;
-
-    color: #9cb0c8;
-
-    font-size: 10px;
-    line-height: 1.65;
+.chart-key span::before {
+  content: "";
+  display: inline-block;
+  width: 13px;
+  height: 3px;
+  vertical-align: middle;
+  margin-right: 6px;
 }
 
-.integration-foot code {
-    color: #8bd0fa;
+.key-thermal::before { background: #ad5d29; }
+.key-ambient::before { background: #366d96; }
+
+#trendCanvas {
+  display: block;
+  width: 100%;
+  height: 210px;
 }
 
-/* ==========================================
-   PAGE FOOTER
-   ========================================== */
+.table-scroll {
+  max-height: 290px;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+th {
+  text-align: left;
+  color: #6c7986;
+  font-size: 10px;
+  letter-spacing: .7px;
+  background: #f7f8f9;
+}
+
+th, td {
+  padding: 12px 13px;
+  border-bottom: 1px solid #e9ebee;
+}
+
+td:first-child {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+td:nth-child(2) { font-weight: 700; }
 
 footer {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-
-    margin-top: 26px;
-    padding-top: 17px;
-
-    border-top: 1px solid #243046;
-
-    color: #677990;
-
-    font-size: 9px;
-    font-weight: 750;
-    letter-spacing: 0.9px;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 19px 0 27px;
+  color: #7b8691;
+  font-size: 11px;
+  border-top: 1px solid #dce0e4;
 }
 
-footer span {
-    color: #7388a4;
+/* Fire and fault annunciation */
+
+.fire-banner {
+  background: #aa2b26;
+  color: #fff;
+  padding: 16px 20px;
+  margin-top: 16px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 2px solid #8c1c18;
 }
 
-/* ==========================================
-   RESPONSIVE - MEDIUM DESKTOP
-   ========================================== */
-
-@media (max-width: 1190px) {
-
-    .sidebar {
-        width: 212px;
-        min-width: 212px;
-        padding: 25px 12px;
-    }
-
-    .main {
-        width: calc(100% - 212px);
-        padding: 0 22px 25px;
-    }
-
-    .metric-card {
-        padding: 15px 14px;
-    }
-
-    .metric-value {
-        font-size: 28px;
-    }
-
-    .content-grid {
-        grid-template-columns:
-            minmax(0, 1.5fr)
-            minmax(260px, 1fr);
-    }
-
-    .panel {
-        padding: 17px;
-    }
+.fire-banner strong {
+  font-size: 17px;
+  letter-spacing: .6px;
 }
 
-/* ==========================================
-   RESPONSIVE - TABLET
-   ========================================== */
+.fire-banner span { font-size: 12px; }
 
-@media (max-width: 950px) {
+.fire-banner[hidden],
+.fault-banner[hidden] { display: none; }
 
-    .content-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .metrics {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-    }
-
-    .side-bottom {
-        display: none;
-    }
-
-    .sidebar {
-        min-height: 100vh;
-    }
+.fault-banner {
+  margin-top: 14px;
+  padding: 12px 15px;
+  background: #fff3dc;
+  border: 1px solid #e6c987;
+  color: #7d5610;
+  font-size: 12px;
+  font-weight: 720;
+  border-radius: 4px;
 }
 
-/* ==========================================
-   RESPONSIVE - MOBILE
-   ========================================== */
+body.fire-active .fire-banner {
+  animation: alarm-flash 1s step-end infinite;
+}
+
+body.fire-active .topbar {
+  border-bottom: 3px solid #aa2b26;
+}
+
+@keyframes alarm-flash {
+  50% {
+    background: #f3d8d5;
+    color: #8c1c18;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.fire-active .fire-banner { animation: none; }
+}
+
+@media (max-width: 1100px) {
+  .overview { grid-template-columns: repeat(2, 1fr); }
+  .main-grid { grid-template-columns: 1fr; }
+  .right-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .thermal-wrap { max-height: none; }
+}
 
 @media (max-width: 700px) {
-
-    .app {
-        display: block;
-    }
-
-    .sidebar {
-        width: 100%;
-        min-height: 0;
-
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-
-        padding: 15px 17px;
-    }
-
-    .brand {
-        margin: 0 0 12px;
-    }
-
-    .sidebar nav {
-        display: flex;
-        overflow-x: auto;
-        margin: 0;
-    }
-
-    .aside-section-label,
-    .module {
-        display: none;
-    }
-
-    .nav-item {
-        white-space: nowrap;
-    }
-
-    .main {
-        width: 100%;
-        padding: 0 13px 22px;
-    }
-
-    .topbar {
-        height: 56px;
-    }
-
-    .breadcrumbs {
-        font-size: 9px;
-    }
-
-    .topbar-right {
-        gap: 5px;
-    }
-
-    .date {
-        display: none;
-    }
-
-    .page-heading {
-        padding: 27px 0 19px;
-    }
-
-    h1 {
-        font-size: 24px;
-    }
-
-    .head-metadata {
-        display: none;
-    }
-
-    .metrics {
-        gap: 9px;
-    }
-
-    .metric-card {
-        padding: 14px 12px;
-    }
-
-    .metric-top {
-        font-size: 8px;
-    }
-
-    .metric-value {
-        font-size: 25px;
-    }
-
-    .metric-bottom {
-        font-size: 9px;
-    }
-
-    .panel {
-        padding: 15px;
-    }
-
-    .thermal-toolbar {
-        flex-wrap: wrap;
-    }
-
-    .viewport-corner {
-        font-size: 7px;
-        padding: 5px;
-    }
-
-    .camera-foot {
-        flex-wrap: wrap;
-    }
-
-    footer {
-        flex-direction: column;
-        gap: 8px;
-    }
+  .shell { padding: 0 13px; }
+  .topbar {
+    padding: 16px 0;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  h1 { font-size: 19px; }
+  .overview { gap: 9px; }
+  .metric { padding: 14px; min-height: 118px; }
+  .metric-value { font-size: 26px; }
+  .metric-small { font-size: 17px; }
+  .panel { padding: 14px; }
+  .right-column { grid-template-columns: 1fr; }
+  .sensor-details { grid-template-columns: repeat(2, 1fr); }
+  .panel-heading { flex-wrap: wrap; }
+  footer { flex-direction: column; }
 }
-
-/* ==========================================
-   END OF FIRESENSE STYLESHEET
-   ========================================== */
