@@ -1,0 +1,696 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0c111d">
+
+    <title>FireSense - Thermal Monitoring</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/app.js" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">&#9832;</div>
+            <div>
+                <strong>FireSense</strong>
+                <small>FYP CONTROL CENTRE</small>
+            </div>
+        </div>
+
+        <div class="aside-section-label">WORKSPACE</div>
+
+        <nav aria-label="Main navigation">
+            <a class="nav-item active" href="#monitor">
+                <span class="nav-symbol">&#9638;</span>
+                Live monitoring
+                <span class="nav-dot"></span>
+            </a>
+
+            <a class="nav-item" href="#history">
+                <span class="nav-symbol">&#8961;</span>
+                Temperature trend
+            </a>
+
+            <a class="nav-item" href="#integration">
+                <span class="nav-symbol">&#11041;</span>
+                System integration
+            </a>
+        </nav>
+
+        <div class="aside-section-label">
+            CONNECTED MODULES
+        </div>
+
+        <div class="module">
+            <span class="module-icon">&#9636;</span>
+            <div>
+                <strong>MLX90640</strong>
+                <small>32 &#215; 24 thermal array</small>
+            </div>
+            <span id="cameraStatus"
+                  class="mini-status waiting"></span>
+        </div>
+
+        <div class="module">
+            <span class="module-icon">&#9673;</span>
+            <div>
+                <strong>DS18B20</strong>
+                <small>Ambient temperature sensor</small>
+            </div>
+            <span class="mini-status muted"></span>
+        </div>
+
+        <div class="module">
+            <span class="module-icon">&#9671;</span>
+            <div>
+                <strong>ML Classifier</strong>
+                <small>Not yet integrated</small>
+            </div>
+            <span class="mini-status muted"></span>
+        </div>
+
+        <div class="side-bottom">
+            <div class="side-bottom-top">
+                <span class="tiny-ring"></span>
+                DEVELOPMENT STAGE 01
+            </div>
+
+            <div class="side-bottom-main">
+                Thermal Streaming
+            </div>
+
+            <p>
+                Real-time thermal monitoring.
+                Machine learning and suppression
+                integration will follow.
+            </p>
+
+            <div class="progress-track">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN DASHBOARD -->
+    <main id="monitor" class="main">
+
+        <!-- TOP BAR -->
+        <div class="topbar">
+            <div class="breadcrumbs">
+                SYSTEM OVERVIEW
+                <span>/</span>
+                THERMAL MONITORING
+            </div>
+
+            <div class="topbar-right">
+                <span class="date" id="currentDate">
+                    &#8212;
+                </span>
+
+                <span class="server-pill" id="serverPill">
+                    <span class="status-light"></span>
+                    <span id="serverStatus">
+                        Connecting
+                    </span>
+                </span>
+            </div>
+        </div>
+
+        <!-- PAGE HEADER -->
+        <header class="page-heading">
+
+            <div>
+                <div class="eyebrow">
+                    LIVE SENSOR TELEMETRY
+                    <span class="eyebrow-rule"></span>
+                </div>
+
+                <h1>
+                    Thermal Monitoring
+                    <span>Dashboard</span>
+                </h1>
+
+                <p>
+                    Real-time MLX90640 thermal imaging
+                    and temperature analytics.
+                </p>
+            </div>
+
+            <div class="head-metadata">
+                <span class="label">DATA SOURCE</span>
+
+                <span id="sourceBadge"
+                      class="source-badge">
+                    AWAITING INPUT
+                </span>
+            </div>
+
+        </header>
+
+        <!-- LIVE METRICS -->
+        <section class="metrics"
+                 aria-label="Live thermal statistics">
+
+            <!-- MAXIMUM TEMPERATURE -->
+            <article class="metric-card">
+                <div class="metric-top">
+                    <span>MAX TEMPERATURE</span>
+                    <span class="metric-icon heat">
+                        &#8599;
+                    </span>
+                </div>
+
+                <div class="metric-value">
+                    <span id="maxTemp">--.-</span>
+                    <small>&#176;C</small>
+                </div>
+
+                <div class="metric-bottom">
+                    <span class="metric-dot hot"></span>
+                    Highest pixel in latest frame
+                </div>
+            </article>
+
+            <!-- MINIMUM TEMPERATURE -->
+            <article class="metric-card">
+                <div class="metric-top">
+                    <span>MIN TEMPERATURE</span>
+                    <span class="metric-icon cool">
+                        &#8600;
+                    </span>
+                </div>
+
+                <div class="metric-value">
+                    <span id="minTemp">--.-</span>
+                    <small>&#176;C</small>
+                </div>
+
+                <div class="metric-bottom">
+                    <span class="metric-dot cool"></span>
+                    Lowest pixel in latest frame
+                </div>
+            </article>
+
+            <!-- MEAN TEMPERATURE -->
+            <article class="metric-card">
+                <div class="metric-top">
+                    <span>MEAN TEMPERATURE</span>
+                    <span class="metric-icon mean">
+                        &#8767;
+                    </span>
+                </div>
+
+                <div class="metric-value">
+                    <span id="meanTemp">--.-</span>
+                    <small>&#176;C</small>
+                </div>
+
+                <div class="metric-bottom">
+                    <span class="metric-dot mean"></span>
+                    Average across valid pixels
+                </div>
+            </article>
+
+            <!-- FRAME RATE -->
+            <article class="metric-card">
+                <div class="metric-top">
+                    <span>FRAME RATE</span>
+                    <span class="metric-icon frame">
+                        &#9637;
+                    </span>
+                </div>
+
+                <div class="metric-value">
+                    <span id="frameRate">0.0</span>
+                    <small>FPS</small>
+                </div>
+
+                <div class="metric-bottom">
+                    <span class="metric-dot stream"></span>
+                    <span id="frameStatus">
+                        Waiting for frames
+                    </span>
+                </div>
+            </article>
+
+        </section>
+
+        <!-- MAIN CONTENT GRID -->
+        <div class="content-grid">
+
+            <!-- THERMAL CAMERA -->
+            <section class="panel thermal-panel"
+                     aria-label="Live thermal camera feed">
+
+                <div class="panel-head">
+                    <div>
+                        <div class="section-tag">
+                            01 / LIVE VISION
+                        </div>
+
+                        <h2>Thermal Camera Feed</h2>
+
+                        <p>
+                            Rendered from a 32 &#215; 24
+                            thermal temperature matrix
+                        </p>
+                    </div>
+
+                    <span id="feedStatus"
+                          class="feed-badge">
+                        <span class="badge-dot"></span>
+                        STANDBY
+                    </span>
+                </div>
+
+                <!-- THERMAL CONTROLS -->
+                <div class="thermal-toolbar">
+
+                    <div class="palette-label">
+                        COLOR PALETTE
+
+                        <select id="palette"
+                                aria-label="Thermal color palette">
+
+                            <option value="ironbow">
+                                Ironbow
+                            </option>
+
+                            <option value="inferno">
+                                Inferno
+                            </option>
+
+                            <option value="grayscale">
+                                Grayscale
+                            </option>
+
+                        </select>
+                    </div>
+
+                    <div class="toolbar-right">
+                        <label for="rangeMin">
+                            RANGE &#176;C
+                        </label>
+
+                        <input id="rangeMin"
+                               type="number"
+                               value="20"
+                               min="-40"
+                               max="350"
+                               step="5">
+
+                        <span>&#8212;</span>
+
+                        <input id="rangeMax"
+                               type="number"
+                               value="100"
+                               min="-40"
+                               max="350"
+                               step="5">
+                    </div>
+
+                </div>
+
+                <!-- LIVE THERMAL VIEWPORT -->
+                <div class="viewport">
+
+                    <canvas id="thermalCanvas"
+                            width="960"
+                            height="720"
+                            aria-label="Live thermal camera frame">
+                    </canvas>
+
+                    <div class="viewport-corner top-left">
+                        THERMAL &#183; MLX90640
+                    </div>
+
+                    <div id="sequenceText"
+                         class="viewport-corner top-right">
+                        NO FRAMES
+                    </div>
+
+                    <div id="demoWatermark"
+                         class="demo-watermark"
+                         hidden>
+                        SIMULATED INPUT
+                    </div>
+
+                    <!-- DISPLAYED BEFORE FRAMES ARRIVE -->
+                    <div id="emptyState"
+                         class="empty-state">
+
+                        <div class="empty-icon">
+                            &#9638;
+                        </div>
+
+                        <strong>
+                            Waiting for thermal frames
+                        </strong>
+
+                        <p>
+                            Start the simulator or connect
+                            the MLX90640 camera through
+                            the Raspberry Pi Pico 2 W.
+                        </p>
+
+                    </div>
+
+                    <div id="hoverValue"
+                         class="viewport-corner bottom-left">
+                        MOVE CURSOR TO INSPECT PIXELS
+                    </div>
+
+                    <div id="frameTimestamp"
+                         class="viewport-corner bottom-right">
+                        &#8212;
+                    </div>
+
+                </div>
+
+                <!-- TEMPERATURE COLOUR SCALE -->
+                <div class="colorbar-line">
+                    <span id="legendLow">
+                        20 &#176;C
+                    </span>
+
+                    <div id="colorbar"
+                         class="colorbar"></div>
+
+                    <span id="legendHigh">
+                        100 &#176;C
+                    </span>
+                </div>
+
+                <!-- CAMERA FOOTER -->
+                <div class="camera-foot">
+
+                    <div>
+                        <span class="small-led"></span>
+
+                        <span id="cameraFoot">
+                            MLX90640 &#183; 768 thermal pixels
+                            &#183; awaiting data
+                        </span>
+                    </div>
+
+                    <button id="pauseBtn"
+                            class="text-button"
+                            type="button"
+                            aria-pressed="false">
+                        Pause display
+                    </button>
+
+                </div>
+
+            </section>
+
+            <!-- SYSTEM DIAGNOSTICS -->
+            <section class="panel diagnostics-panel">
+
+                <div class="panel-head">
+                    <div>
+                        <div class="section-tag">
+                            02 / DEVICE HEALTH
+                        </div>
+
+                        <h2>System Diagnostics</h2>
+
+                        <p>
+                            Real-time connection information
+                        </p>
+                    </div>
+                </div>
+
+                <div class="diag-block">
+                    <div class="diag-icon">&#8961;</div>
+
+                    <div class="diag-copy">
+                        <span>Dashboard WebSocket</span>
+                        <strong id="socketLabel">
+                            Connecting
+                        </strong>
+                    </div>
+
+                    <span id="socketDot"
+                          class="diag-status amber"></span>
+                </div>
+
+                <div class="diag-block">
+                    <div class="diag-icon">&#9672;</div>
+
+                    <div class="diag-copy">
+                        <span>Last camera frame</span>
+                        <strong id="lastFrame">
+                            No frames received
+                        </strong>
+                    </div>
+
+                    <span id="cameraDot"
+                          class="diag-status amber"></span>
+                </div>
+
+                <div class="diag-block">
+                    <div class="diag-icon">&#9639;</div>
+
+                    <div class="diag-copy">
+                        <span>Frame resolution</span>
+                        <strong id="resolution">
+                            32 &#215; 24 pixels
+                        </strong>
+                    </div>
+
+                    <span class="diag-status green"></span>
+                </div>
+
+                <div class="diag-block">
+                    <div class="diag-icon">&#9673;</div>
+
+                    <div class="diag-copy">
+                        <span>DS18B20 temperature</span>
+                        <strong id="ambientReading">
+                            Awaiting telemetry
+                        </strong>
+                    </div>
+
+                    <span class="diag-status muted"></span>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="diag-extra">
+                    <div class="label">
+                        FRAME SEQUENCE
+                    </div>
+
+                    <strong id="totalFrames">000000</strong>
+                </div>
+
+                <div class="diag-extra">
+                    <div class="label">
+                        SENSOR TEMPERATURE (OPTIONAL)
+                    </div>
+
+                    <strong id="sensorTemp">
+                        &#8212;
+                    </strong>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="diag-extra">
+                    <div class="label">
+                        VALID SENSOR PIXELS
+                    </div>
+
+                    <strong id="validPixels">
+                        &#8212;
+                    </strong>
+                </div>
+
+                <div class="diag-extra">
+                    <div class="label">
+                        REPORTED CLASSIFICATION
+                    </div>
+
+                    <strong id="reportedState"
+                            class="reported-state">
+                        &#8212;
+                    </strong>
+                </div>
+
+                <div class="diag-extra">
+                    <div class="label">
+                        REPORTED SUPPRESSION
+                    </div>
+
+                    <strong id="reportedSuppression">
+                        &#8212;
+                    </strong>
+                </div>
+
+                <div class="diag-extra">
+                    <div class="label">
+                        LAST TELEMETRY
+                    </div>
+
+                    <strong id="telemetryTimestamp">
+                        &#8212;
+                    </strong>
+                </div>
+
+                <div class="info-note">
+                    <strong>DETECTION STATUS</strong>
+
+                    <p>
+                        Machine learning is not yet integrated.
+                        This dashboard displays thermal frames
+                        and reported firmware state only.
+                        It cannot activate fire suppression.
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- TEMPERATURE HISTORY -->
+            <section id="history"
+                     class="panel trend-panel">
+
+                <div class="panel-head">
+                    <div>
+                        <div class="section-tag">
+                            03 / TEMPERATURE HISTORY
+                        </div>
+
+                        <h2>
+                            Maximum Temperature Trend
+                        </h2>
+
+                        <p>
+                            Latest received frames
+                            &#183; rolling live chart
+                        </p>
+                    </div>
+
+                    <div class="legend">
+                        <span class="legend-dot"></span>
+                        MAX TEMP (&#176;C)
+                    </div>
+                </div>
+
+                <div class="trend-canvas-wrap">
+                    <canvas id="trendCanvas"
+                            aria-label="Temperature trend chart">
+                    </canvas>
+                </div>
+
+            </section>
+
+            <!-- INTEGRATION PIPELINE -->
+            <section id="integration"
+                     class="panel integration-panel">
+
+                <div class="panel-head">
+                    <div>
+                        <div class="section-tag">
+                            04 / NEXT INTEGRATION
+                        </div>
+
+                        <h2>System Pipeline</h2>
+
+                        <p>
+                            Thermal acquisition to browser display
+                        </p>
+                    </div>
+                </div>
+
+                <div class="pipeline">
+
+                    <div class="step">
+                        <span class="step-circle ready">
+                            1
+                        </span>
+
+                        <div>
+                            <strong>Thermal frame</strong>
+                            <small>
+                                MLX90640 &#183; 768 readings
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="pipeline-connector"></div>
+
+                    <div class="step">
+                        <span class="step-circle ready">
+                            2
+                        </span>
+
+                        <div>
+                            <strong>HTTP ingestion</strong>
+                            <small>
+                                POST /api/frame
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="pipeline-connector"></div>
+
+                    <div class="step">
+                        <span class="step-circle ready">
+                            3
+                        </span>
+
+                        <div>
+                            <strong>
+                                WebSocket broadcast
+                            </strong>
+
+                            <small>
+                                /ws/thermal &#8594;
+                                live dashboard
+                            </small>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="integration-foot">
+                    PICO COMPATIBLE:
+                    <code>dashboard_client.py</code>
+                    sends thermal frames to port 5000.
+                </div>
+
+            </section>
+
+        </div>
+
+        <!-- FOOTER -->
+        <footer>
+            EARLY FIRE DETECTION &amp;
+            SUPPRESSION SYSTEM
+
+            <span>
+                FINAL YEAR ENGINEERING PROJECT
+                &#183; PHASE 01 / MONITORING
+            </span>
+        </footer>
+
+    </main>
+
+</div>
+
+</body>
+</html>
