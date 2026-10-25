@@ -1,0 +1,3 @@
+# config.py
+TEMP_WARNING_C = 45.0
+TEMP_FIRE_C = 65.0
