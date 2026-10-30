@@ -1,887 +1,314 @@
 
-:root {
-  font-family: "Segoe UI", Arial, sans-serif;
-  color: #25303b;
-  background: #f4f5f6;
-  font-synthesis: none;
-}
-
-* { box-sizing: border-box; }
-body { margin: 0; }
-button, input { font: inherit; }
-button { cursor: pointer; }
-button:disabled { cursor: not-allowed; opacity: .5; }
-
-.shell {
-  max-width: 1560px;
-  margin: 0 auto;
-  padding: 0 28px;
-}
-
-.topbar {
-  min-height: 112px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  border-bottom: 1px solid #d8dce0;
-}
-
-.eyebrow {
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 1.4px;
-  color: #71808d;
-}
-
-h1 {
-  font-size: 23px;
-  letter-spacing: -.5px;
-  margin: 8px 0 4px;
-  font-weight: 720;
-}
-
-h2 {
-  font-size: 17px;
-  margin: 7px 0 0;
-  font-weight: 700;
-}
-
-p { margin: 0; }
-
-.identity p,
-.panel-heading p {
-  font-size: 12px;
-  color: #71808d;
-  margin-top: 7px;
-}
-
-.top-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.clock {
-  font-size: 12px;
-  color: #536171;
-  font-variant-numeric: tabular-nums;
-}
-
-.status {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid #d5dbe0;
-  padding: 6px 9px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: .5px;
-  white-space: nowrap;
-}
-
-.status-off {
-  background: #f0f2f4;
-  color: #697581;
-}
-
-.status-on {
-  background: #e7f3ee;
-  border-color: #c3dfd0;
-  color: #236749;
-}
-
-.status-warning {
-  background: #fff4df;
-  border-color: #e8d09b;
-  color: #8d5b08;
-}
-
-main { padding: 22px 0 30px; }
-
-.overview {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.metric,
-.panel {
-  background: #fff;
-  border: 1px solid #dce0e4;
-  border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, .025);
-}
-
-.metric {
-  padding: 19px 20px;
-  min-height: 128px;
-}
-
-.metric-label {
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 1px;
-  color: #687786;
-  display: block;
-}
-
-.metric-value {
-  display: block;
-  font-size: 32px;
-  font-weight: 720;
-  letter-spacing: -1px;
-  margin: 15px 0 9px;
-  font-variant-numeric: tabular-nums;
-}
-
-.metric-small {
-  font-size: 22px;
-  letter-spacing: -.3px;
-}
-
-.unit {
-  font-size: 17px;
-  font-weight: 500;
-  color: #6d7782;
-}
-
-.metric small {
-  color: #71808d;
-  font-size: 11px;
-}
-
-.main-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.72fr) minmax(330px, 1fr);
-  gap: 14px;
-}
-
-.panel { padding: 20px; }
-
-.panel-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 17px;
-}
-
-/* Thermal camera */
-
-.thermal-wrap {
-  position: relative;
-  background: #e6e9ec;
-  border: 1px solid #d5dbe0;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  max-height: 490px;
-}
-
-.thermal-wrap canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  image-rendering: auto;
-}
-
-.thermal-placeholder {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #64717e;
-  font-size: 13px;
-  background: #e9edf0;
-}
-
-.thermal-placeholder[hidden] { display: none; }
-
-.scale-row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin: 14px 0 9px;
-  font-size: 11px;
-  color: #66727e;
-  font-variant-numeric: tabular-nums;
-}
-
-.thermal-scale {
-  height: 11px;
-  flex: 1;
-  border: 1px solid #cfd4d8;
-  background: linear-gradient(
-    90deg,
-    #000080, #0000ff, #00ffff,
-    #00ff00, #ffff00, #ff0000, #800000
-  );
-}
-
-.range-row {
-  display: flex;
-  align-items: end;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e7e9ec;
-}
-
-.range-row label {
-  font-size: 11px;
-  color: #62707e;
-  display: grid;
-  gap: 5px;
-}
-
-.range-row input {
-  width: 100px;
-  border: 1px solid #cbd3da;
-  border-radius: 4px;
-  padding: 8px;
-  background: #fff;
-  color: #26313c;
-}
-
-.sensor-details {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 17px 12px;
-  padding: 18px 0;
-}
-
-.sensor-details > div,
-.detail-list > div {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.sensor-details span,
-.detail-list span {
-  font-size: 11px;
-  color: #71808d;
-}
-
-.sensor-details strong,
-.detail-list strong {
-  font-size: 12px;
-  color: #283642;
-  font-weight: 680;
-  font-variant-numeric: tabular-nums;
-}
-
-.hint {
-  font-size: 11px;
-  color: #77838e;
-  border-top: 1px solid #e7e9ec;
-  padding-top: 12px;
-}
-
-/* Alarm management */
-
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.alarm-panel { flex: 1; }
-
-.alarm-condition {
-  background: #f0f2f4;
-  color: #4b5a67;
-  padding: 16px;
-  border: 1px solid #dce1e5;
-  border-radius: 4px;
-  font-size: 15px;
-  font-weight: 750;
-}
-
-.alarm-condition.fire {
-  background: #fff0ee;
-  border-color: #d74c42;
-  color: #a9271e;
-}
-
-.alarm-condition.warning {
-  background: #fff6e4;
-  border-color: #e3c278;
-  color: #8a5a08;
-}
-
-.detail-text {
-  font-size: 12px;
-  color: #687683;
-  line-height: 1.6;
-  margin: 14px 0;
-}
-
-.alarm-controls {
-  display: grid;
-  gap: 9px;
-  margin: 16px 0;
-}
-
-.button {
-  padding: 11px 14px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 720;
-  border: 1px solid #cbd3da;
-}
-
-.button-neutral {
-  background: #f8f9fa;
-  color: #344252;
-}
-
-.button-primary {
-  background: #33485e;
-  color: #fff;
-  border-color: #33485e;
-}
-
-.button-danger {
-  background: #a92d27;
-  color: #fff;
-  border-color: #a92d27;
-}
-
-.button:focus-visible,
-input:focus-visible {
-  outline: 3px solid #7294b4;
-  outline-offset: 2px;
-}
-
-.detail-list {
-  display: grid;
-  gap: 14px;
-  padding: 16px 0;
-  border-top: 1px solid #e7e9ec;
-}
-
-.detail-list > div {
-  flex-direction: row;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.safety-note {
-  background: #f6f7f8;
-  padding: 11px;
-  color: #65727d;
-  font-size: 11px;
-  line-height: 1.5;
-  border-left: 3px solid #9ca6af;
-}
-
-/* DS18B20 */
-
-.ambient-reading {
-  padding: 12px 0 2px;
-  font-size: 16px;
-  color: #6d7782;
-}
-
-.ambient-reading span:first-child {
-  font-size: 48px;
-  font-weight: 720;
-  color: #273541;
-  letter-spacing: -2px;
-  font-variant-numeric: tabular-nums;
-}
-
-.sensor-panel .detail-list { margin-top: 15px; }
-
-/* History and event table */
-
-.history-panel,
-.events-panel { margin-top: 14px; }
-
-.chart-key {
-  display: flex;
-  gap: 16px;
-  white-space: nowrap;
-  font-size: 11px;
-  color: #637180;
-}
-
-.chart-key span::before {
-  content: "";
-  display: inline-block;
-  width: 13px;
-  height: 3px;
-  vertical-align: middle;
-  margin-right: 6px;
-}
-
-.key-thermal::before { background: #ad5d29; }
-.key-ambient::before { background: #366d96; }
-
-#trendCanvas {
-  display: block;
-  width: 100%;
-  height: 210px;
-}
-
-.table-scroll {
-  max-height: 290px;
-  overflow: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-th {
-  text-align: left;
-  color: #6c7986;
-  font-size: 10px;
-  letter-spacing: .7px;
-  background: #f7f8f9;
-}
-
-th, td {
-  padding: 12px 13px;
-  border-bottom: 1px solid #e9ebee;
-}
-
-td:first-child {
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-td:nth-child(2) { font-weight: 700; }
-
-/* Footer (all pages) */
-
-.site-footer {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 18px 32px;
-  padding: 22px 0 28px;
-  color: #7b8691;
-  font-size: 11px;
-  border-top: 1px solid #dce0e4;
-}
-
-.footer-brand {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.footer-logo {
-  height: 46px;
-  width: auto;
-  display: block;
-}
-
-.footer-author {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding-left: 16px;
-  border-left: 1px solid #dce0e4;
-}
-
-.footer-author strong {
-  color: #25303b;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.footer-links {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px 20px;
-}
-
-.footer-links a {
-  color: #33485e;
-  font-weight: 650;
-  text-decoration: none;
-}
-
-.footer-links a:hover { text-decoration: underline; }
-
-.footer-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  text-align: right;
-}
-
-.prototype-tag { text-decoration: none; }
-.prototype-tag:hover { text-decoration: underline; }
-
-/* Data capture page */
-
-.capture-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(330px, 1fr);
-  gap: 14px;
-}
-
-.label-choice {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.label-choice button {
-  text-align: left;
-  padding: 12px;
-  border: 1px solid #cbd3da;
-  border-radius: 4px;
-  background: #f8f9fa;
-  color: #344252;
-  font-size: 13px;
-  font-weight: 720;
-}
-
-.label-choice button small {
-  display: block;
-  margin-top: 3px;
-  font-size: 11px;
-  font-weight: 400;
-  color: #71808d;
-}
-
-.label-choice button.sel[data-l=normal]  { background: #e7f3ee; border-color: #236749; color: #236749; }
-.label-choice button.sel[data-l=warning] { background: #fff4df; border-color: #c58a17; color: #8d5b08; }
-.label-choice button.sel[data-l=fire]    { background: #fff0ee; border-color: #a92d27; color: #a92d27; }
-
-.field {
-  display: grid;
-  gap: 6px;
-  margin-top: 15px;
-  font-size: 11px;
-  color: #62707e;
-}
-
-.field input {
-  border: 1px solid #cbd3da;
-  border-radius: 4px;
-  padding: 9px 10px;
-  background: #fff;
-  color: #26313c;
-  font-size: 13px;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.chip {
-  border: 1px solid #d5dbe0;
-  background: #f8f9fa;
-  color: #536171;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 11px;
-}
-
-.chip:hover { border-color: #9ca6af; color: #25303b; }
-
-.name-preview {
-  margin-top: 8px;
-  font-size: 11px;
-  color: #71808d;
-}
-
-.name-preview b {
-  font-family: Consolas, "Courier New", monospace;
-  color: #25303b;
-  font-weight: 600;
-}
-
-.duration {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-}
-
-.duration button {
-  padding: 8px 0;
-  border: 1px solid #cbd3da;
-  border-radius: 4px;
-  background: #f8f9fa;
-  color: #344252;
-  font-size: 12px;
-}
-
-.duration button.sel {
-  background: #33485e;
-  border-color: #33485e;
-  color: #fff;
-}
-
-.record-go {
-  width: 100%;
-  margin-top: 18px;
-  padding: 13px;
-  font-size: 13px;
-}
-
-.record-progress {
-  height: 6px;
-  background: #e9edf0;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 12px;
-}
-
-.record-progress[hidden] { display: none; }
-
-.record-progress i {
-  display: block;
-  height: 100%;
-  width: 0;
-  background: #a92d27;
-  transition: width .4s linear;
-}
-
-.capture-msg {
-  margin-top: 10px;
-  min-height: 18px;
-  font-size: 12px;
-  color: #687683;
-}
-
-.capture-msg.err { color: #a92d27; }
-.capture-msg.ok { color: #236749; }
-
-.link-button {
-  background: none;
-  border: 0;
-  padding: 0;
-  margin-top: 4px;
-  color: #687683;
-  font-size: 11px;
-  text-decoration: underline;
-}
-
-.link-button[hidden] { display: none; }
-
-.status-rec {
-  background: #fff0ee;
-  border-color: #d74c42;
-  color: #a92d27;
-}
-
-.class-progress {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 22px;
-}
-
-.class-top {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #283642;
-}
-
-.class-top strong { font-variant-numeric: tabular-nums; }
-
-.class-progress .bar {
-  height: 6px;
-  background: #e9edf0;
-  border-radius: 3px;
-  overflow: hidden;
-  margin: 8px 0 6px;
-}
-
-.class-progress .bar i { display: block; height: 100%; }
-.class-progress small { font-size: 11px; color: #71808d; }
-
-.capture-table { max-height: 520px; }
-
-.thumb {
-  height: 44px;
-  display: block;
-  border: 1px solid #dce0e4;
-  border-radius: 3px;
-  cursor: zoom-in;
-}
-
-.tag {
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: .5px;
-  padding: 3px 7px;
-  border-radius: 4px;
-  border: 1px solid;
-}
-
-.tag-normal  { background: #e7f3ee; border-color: #c3dfd0; color: #236749; }
-.tag-warning { background: #fff4df; border-color: #e8d09b; color: #8d5b08; }
-.tag-fire    { background: #fff0ee; border-color: #efb9b4; color: #a92d27; }
-
-.small-button { padding: 5px 9px; font-size: 11px; }
-
-.preview-dialog {
-  border: 1px solid #dce0e4;
-  border-radius: 6px;
-  padding: 0;
-  max-width: 94vw;
-}
-
-.preview-dialog img { display: block; max-width: 94vw; max-height: 86vh; }
-.preview-dialog::backdrop { background: rgba(37, 48, 59, .55); }
-
-/* Disclaimer page */
-
-.page-link {
-  text-decoration: none;
-  display: inline-block;
-  white-space: nowrap;
-}
-
-.doc { max-width: 920px; }
-
-.doc-alert {
-  background: #fff3dc;
-  border: 1px solid #e6c987;
-  border-left: 4px solid #c58a17;
-  color: #6f4c0c;
-  padding: 15px 18px;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-.doc-alert strong { font-size: 14px; letter-spacing: .4px; }
-.doc-alert span { font-size: 13px; line-height: 1.55; }
-
-.doc-panel { padding: 6px 26px 22px; }
-
-.doc-section {
-  padding: 20px 0;
-  border-bottom: 1px solid #e7e9ec;
-}
-
-.doc-section h2 { margin-bottom: 10px; }
-
-.doc-section p,
-.doc-section li {
-  font-size: 13.5px;
-  line-height: 1.65;
-  color: #3b4752;
-}
-
-.doc-section p + p { margin-top: 10px; }
-.doc-section ul { margin: 0; padding-left: 20px; }
-.doc-section li + li { margin-top: 6px; }
-.doc-section a { color: #33485e; font-weight: 650; }
-
-.doc-updated {
-  font-size: 11px;
-  color: #7b8691;
-  padding-top: 16px;
-}
-
-/* Fire and fault annunciation */
-
-.fire-banner {
-  background: #aa2b26;
-  color: #fff;
-  padding: 16px 20px;
-  margin-top: 16px;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border: 2px solid #8c1c18;
-}
-
-.fire-banner strong {
-  font-size: 17px;
-  letter-spacing: .6px;
-}
-
-.fire-banner span { font-size: 12px; }
-
-.fire-banner[hidden],
-.fault-banner[hidden] { display: none; }
-
-.fault-banner {
-  margin-top: 14px;
-  padding: 12px 15px;
-  background: #fff3dc;
-  border: 1px solid #e6c987;
-  color: #7d5610;
-  font-size: 12px;
-  font-weight: 720;
-  border-radius: 4px;
-}
-
-body.fire-active .fire-banner {
-  animation: alarm-flash 1s step-end infinite;
-}
-
-body.fire-active .topbar {
-  border-bottom: 3px solid #aa2b26;
-}
-
-@keyframes alarm-flash {
-  50% {
-    background: #f3d8d5;
-    color: #8c1c18;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  body.fire-active .fire-banner { animation: none; }
-}
-
-@media (max-width: 1100px) {
-  .overview { grid-template-columns: repeat(2, 1fr); }
-  .main-grid { grid-template-columns: 1fr; }
-  .right-column {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-  .thermal-wrap { max-height: none; }
-  .site-footer { grid-template-columns: 1fr; }
-  .capture-grid { grid-template-columns: minmax(0, 1fr); }
-  .footer-links { justify-content: flex-start; }
-  .footer-meta { text-align: left; }
-}
-
-@media (max-width: 700px) {
-  .shell { padding: 0 13px; }
-  .topbar {
-    padding: 16px 0;
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  h1 { font-size: 19px; }
-  .overview { gap: 9px; }
-  .metric { padding: 14px; min-height: 118px; }
-  .metric-value { font-size: 26px; }
-  .metric-small { font-size: 17px; }
-  .panel { padding: 14px; }
-  .doc-panel { padding: 4px 16px 16px; }
-  .class-progress { grid-template-columns: 1fr; gap: 14px; }
-  .label-choice button { padding: 10px 8px; }
-  .top-right { flex-wrap: wrap; gap: 10px; }
-  .right-column { grid-template-columns: 1fr; }
-  .sensor-details { grid-template-columns: repeat(2, 1fr); }
-  .panel-heading { flex-wrap: wrap; }
-  .footer-brand { align-items: flex-start; flex-direction: column; gap: 12px; }
-  .footer-author { padding-left: 0; border-left: 0; }
-}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f6">
+  <title>Early Fire Detection and Monitoring System</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="identity">
+        <span class="eyebrow">OPERATIONS / ENVIRONMENTAL SAFETY</span>
+        <h1>Early Fire Detection and Monitoring System</h1>
+        <p>Real-time thermal surveillance and alarm management</p>
+      </div>
+      <div class="top-right">
+        <a href="/disclaimer" class="status status-warning prototype-tag"
+           title="Academic project - read the legal disclaimer">ACADEMIC PROTOTYPE</a>
+        <span id="connection" class="status status-off">Connecting</span>
+        <span id="clock" class="clock">--</span>
+      </div>
+    </header>
+
+    <div id="fireBanner" class="fire-banner"
+         role="alert" aria-live="assertive" hidden>
+      <strong>FIRE DETECTED — OPERATOR ACTION REQUIRED</strong>
+      <span>
+        Confirmed fire state reported by the sensing unit.
+        Follow site emergency procedures.
+      </span>
+    </div>
+
+    <div id="faultBanner" class="fault-banner" role="status" hidden>
+      SENSOR DATA STALE OR CONNECTION LOST — VERIFY DEVICE STATUS
+    </div>
+
+    <main>
+      <section class="overview" aria-label="System measurements">
+        <article class="metric">
+          <span class="metric-label">SYSTEM CONDITION</span>
+          <strong id="systemState" class="metric-value">UNKNOWN</strong>
+          <small id="classificationSource">
+            Awaiting device classification
+          </small>
+        </article>
+
+        <article class="metric">
+          <span class="metric-label">MAXIMUM THERMAL TEMPERATURE</span>
+          <strong class="metric-value">
+            <span id="maxTemp">—</span>
+            <span class="unit"> °C</span>
+          </strong>
+          <small>MLX90640 · hottest valid pixel</small>
+        </article>
+
+        <article class="metric">
+          <span class="metric-label">AMBIENT TEMPERATURE</span>
+          <strong class="metric-value">
+            <span id="ambientTemp">—</span>
+            <span class="unit"> °C</span>
+          </strong>
+          <small>DS18B20 · 1-Wire sensor</small>
+        </article>
+
+        <article class="metric">
+          <span class="metric-label">SUPPRESSION SYSTEM</span>
+          <strong id="suppression" class="metric-value metric-small">
+            UNKNOWN
+          </strong>
+          <small>Device-reported relay status only</small>
+        </article>
+      </section>
+
+      <div class="main-grid">
+        <section class="panel thermal-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">01 / PRIMARY SENSOR</span>
+              <h2>MLX90640 Thermal Camera</h2>
+            </div>
+            <span id="thermalHealth" class="status status-off">
+              NO DATA
+            </span>
+          </div>
+
+          <div class="thermal-wrap">
+            <canvas id="thermalCanvas" width="320" height="240"
+                    aria-label="Live 32 by 24 thermal temperature map">
+            </canvas>
+            <div id="thermalPlaceholder" class="thermal-placeholder">
+              Awaiting thermal frame from sensing unit
+            </div>
+          </div>
+
+          <div class="scale-row">
+            <span id="scaleMinLabel">20 °C</span>
+            <div class="thermal-scale"></div>
+            <span id="scaleMaxLabel">100 °C</span>
+          </div>
+
+          <div class="range-row">
+            <label>
+              Display minimum (°C)
+              <input id="scaleMin" type="number"
+                     min="-40" max="300" value="20">
+            </label>
+            <label>
+              Display maximum (°C)
+              <input id="scaleMax" type="number"
+                     min="-39" max="350" value="100">
+            </label>
+            <button id="applyScale" type="button"
+                    class="button button-neutral">
+              Apply range
+            </button>
+          </div>
+
+          <div class="sensor-details">
+            <div>
+              <span>Minimum</span>
+              <strong id="minTemp">—</strong>
+            </div>
+            <div>
+              <span>Average</span>
+              <strong id="meanTemp">—</strong>
+            </div>
+            <div>
+              <span>Valid pixels</span>
+              <strong id="validPixels">— / 768</strong>
+            </div>
+            <div>
+              <span>Hotspot location</span>
+              <strong id="hotspot">—</strong>
+            </div>
+            <div>
+              <span>Frame sequence</span>
+              <strong id="frameSeq">—</strong>
+            </div>
+            <div>
+              <span>Last thermal update</span>
+              <strong id="frameTime">—</strong>
+            </div>
+          </div>
+
+          <p id="pixelInspect" class="hint">
+            Move the pointer over the image to inspect
+            measured pixel temperatures.
+          </p>
+        </section>
+
+        <aside class="right-column">
+          <section class="panel alarm-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">02 / RESPONSE</span>
+                <h2>Alarm Management</h2>
+              </div>
+            </div>
+
+            <div id="alarmCondition" class="alarm-condition">
+              No fire alarm reported
+            </div>
+
+            <p id="alarmMessage" class="detail-text">
+              Awaiting current system telemetry.
+            </p>
+
+            <div class="alarm-controls">
+              <button id="enableAudio" type="button"
+                      class="button button-primary">
+                Enable Alarm Audio
+              </button>
+
+              <button id="killAlarm" type="button"
+                      class="button button-danger" disabled>
+                Kill Alarm — Silence
+              </button>
+            </div>
+
+            <div class="detail-list">
+              <div>
+                <span>Operator audio</span>
+                <strong id="audioStatus">NOT ENABLED</strong>
+              </div>
+              <div>
+                <span>Alarm acknowledgement</span>
+                <strong id="silenceStatus">NOT SILENCED</strong>
+              </div>
+              <div>
+                <span>Last telemetry</span>
+                <strong id="telemetryTime">—</strong>
+              </div>
+            </div>
+
+            <p class="safety-note">
+              Kill Alarm silences this browser only.
+              It does not clear the fire condition,
+              stop the device buzzer or control suppression.
+            </p>
+          </section>
+
+          <section class="panel sensor-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">03 / SECONDARY SENSOR</span>
+                <h2>DS18B20 Ambient Sensor</h2>
+              </div>
+              <span id="ambientHealth" class="status status-off">
+                NO DATA
+              </span>
+            </div>
+
+            <div class="ambient-reading">
+              <span id="ambientLarge">—</span>
+              <span>°C</span>
+            </div>
+
+            <p class="detail-text">
+              Ambient temperature provides a separate reference
+              for evaluating localised thermal activity.
+            </p>
+
+            <div class="detail-list">
+              <div>
+                <span>Sensor interface</span>
+                <strong>1-Wire</strong>
+              </div>
+              <div>
+                <span>Last ambient update</span>
+                <strong id="ambientTime">—</strong>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <section class="panel history-panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">04 / MEASUREMENTS</span>
+            <h2>Temperature History</h2>
+            <p>
+              Rolling live chart · maximum thermal
+              and ambient temperature
+            </p>
+          </div>
+          <div class="chart-key">
+            <span class="key-thermal">Thermal max</span>
+            <span class="key-ambient">Ambient</span>
+          </div>
+        </div>
+
+        <canvas id="trendCanvas"
+                aria-label="Recent thermal and ambient temperatures">
+        </canvas>
+      </section>
+
+      <section class="panel events-panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">05 / AUDIT</span>
+            <h2>Alarm and System Events</h2>
+            <p>
+              Server-recorded state transitions
+              and suppression reports
+            </p>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Category</th>
+                <th>Event</th>
+              </tr>
+            </thead>
+            <tbody id="eventsBody">
+              <tr>
+                <td colspan="3">No recorded events.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <img src="/static/uj_logo.png" alt="University of Johannesburg" class="footer-logo">
+        <div class="footer-author">
+          <strong>Aphiwe Elihle Mthembu</strong>
+          <span>Student number 223087197</span>
+          <span>Final Year Project · University of Johannesburg</span>
+        </div>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="https://appelirhsa.co.za" target="_blank" rel="noopener">Help · Log a ticket or request maintenance ↗</a>
+        <a href="/disclaimer">Legal disclaimer</a>
+        <a href="/record">Data capture</a>
+      </nav>
+      <div class="footer-meta">
+        <span>Early Fire Detection and Monitoring System</span>
+        <span>Academic prototype · Not a certified fire alarm panel</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
