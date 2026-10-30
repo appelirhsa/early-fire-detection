@@ -68,7 +68,7 @@ function recent(ms) {
 
 function setHealth(id, live) {
   const el = $(id);
-  el.textContent = live ? 'ONLINE' : 'NO RECENT DATA';
+  el.textContent = live ? 'Online' : 'No recent data';
   el.className = `status ${live ? 'status-on' : 'status-off'}`;
 }
 
@@ -183,6 +183,12 @@ function drawThermal() {
   }
 }
 
+/* Read a colour from the active theme (style.css custom properties). */
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
 function addHistory(point) {
   app.history.push(point);
 
@@ -286,11 +292,9 @@ function updateAlarm() {
   $('fireBanner').hidden = !fire;
 
   $('systemState').textContent = app.state;
-  $('systemState').style.color = fire
-    ? '#a92d27'
-    : app.state === 'WARNING'
-      ? '#8d5b08'
-      : '#25303b';
+  $('systemState').className = 'stat-value' + (
+    fire ? ' is-fire' : app.state === 'WARNING' ? ' is-warning' : ''
+  );
 
   const condition = $('alarmCondition');
 
@@ -363,8 +367,8 @@ async function enableAudio() {
       : 'BROWSER BLOCKED';
 
     $('enableAudio').textContent = app.audioEnabled
-      ? 'Alarm Audio Enabled'
-      : 'Enable Alarm Audio';
+      ? 'Alarm audio enabled'
+      : 'Enable alarm audio';
 
     updateAlarm();
   } catch (err) {
@@ -459,8 +463,8 @@ function updateHealth() {
   );
 
   $('connection').textContent = app.connected
-    ? 'SERVER CONNECTED'
-    : 'SERVER DISCONNECTED';
+    ? 'Server connected'
+    : 'Server disconnected';
 
   $('connection').className =
     `status ${app.connected ? 'status-on' : 'status-off'}`;
@@ -565,19 +569,19 @@ function drawTrend() {
   const y = v =>
     bottom - (v - lo) / range * (bottom - top);
 
-  trendCtx.font = '11px Segoe UI, Arial';
+  trendCtx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
 
   for (let i = 0; i <= 4; i++) {
     const val = lo + range * i / 4;
     const yy = y(val);
 
-    trendCtx.strokeStyle = '#e4e8eb';
+    trendCtx.strokeStyle = cssVar('--chart-grid', '#ececea');
     trendCtx.beginPath();
     trendCtx.moveTo(left, yy);
     trendCtx.lineTo(right, yy);
     trendCtx.stroke();
 
-    trendCtx.fillStyle = '#7a8792';
+    trendCtx.fillStyle = cssVar('--chart-label', '#66665f');
     trendCtx.textAlign = 'right';
     trendCtx.fillText(
       `${val.toFixed(0)} °C`,
@@ -587,7 +591,7 @@ function drawTrend() {
   }
 
   if (!app.history.length) {
-    trendCtx.fillStyle = '#788591';
+    trendCtx.fillStyle = cssVar('--chart-label', '#66665f');
     trendCtx.textAlign = 'center';
     trendCtx.fillText(
       'Temperature history will appear when live data arrives',
@@ -604,8 +608,8 @@ function drawTrend() {
   const start = HISTORY_LIMIT - app.history.length;
 
   for (const [key, colour] of [
-    ['thermal', '#ad5d29'],
-    ['ambient', '#366d96']
+    ['thermal', cssVar('--chart-thermal', '#d4561a')],
+    ['ambient', cssVar('--chart-ambient', '#2f6fb2')]
   ]) {
     trendCtx.strokeStyle = colour;
     trendCtx.lineWidth = 2;
@@ -709,6 +713,7 @@ thermalCanvas.addEventListener('mouseleave', () => {
 });
 
 window.addEventListener('resize', drawTrend);
+document.addEventListener('themechange', drawTrend);
 
 setInterval(() => {
   $('clock').textContent = new Date().toLocaleString(
@@ -723,6 +728,26 @@ $('clock').textContent = new Date().toLocaleString(
   undefined,
   {hour12: false}
 );
+
+/* Default display range saved on the Settings page (per browser). */
+(function loadSavedRange() {
+  let low = null;
+  let high = null;
+  try {
+    low = localStorage.getItem('efd-scale-min');
+    high = localStorage.getItem('efd-scale-max');
+  } catch (e) { /* storage blocked: keep built-in defaults */ }
+  if (low === null || high === null) return;
+  low = Number(low);
+  high = Number(high);
+  if (!Number.isFinite(low) || !Number.isFinite(high) || low >= high) return;
+  app.scaleMin = low;
+  app.scaleMax = high;
+  $('scaleMin').value = low;
+  $('scaleMax').value = high;
+  $('scaleMinLabel').textContent = `${low} °C`;
+  $('scaleMaxLabel').textContent = `${high} °C`;
+})();
 
 updateAlarm();
 updateHealth();

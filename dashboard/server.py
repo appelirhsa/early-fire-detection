@@ -152,6 +152,11 @@ async def disclaimer():
     return FileResponse(ROOT / "static" / "disclaimer.html")
 
 
+@app.get("/settings")
+async def settings():
+    return FileResponse(ROOT / "static" / "settings.html")
+
+
 @app.get("/api/status")
 async def status():
     return {
