@@ -19,6 +19,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+import recording  # data-capture page at /record (labelled training data)
+
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "alarm_events.sqlite3"
 DEVICE_TOKEN = os.environ.get("DEVICE_API_TOKEN", "")
@@ -28,6 +30,7 @@ app = FastAPI(
     version="2.0"
 )
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
+app.include_router(recording.router)
 
 
 def utc_now():
@@ -144,6 +147,11 @@ async def dashboard():
     return FileResponse(ROOT / "static" / "index.html")
 
 
+@app.get("/disclaimer")
+async def disclaimer():
+    return FileResponse(ROOT / "static" / "disclaimer.html")
+
+
 @app.get("/api/status")
 async def status():
     return {
@@ -177,6 +185,8 @@ async def receive_frame(
         "mean_c": sum(pixels) / len(pixels),
         "invalid_pixel_count": 768 - len(pixels),
     })
+
+    recording.add_frame(data)  # saves the frame if a capture session is running
 
     async with live.lock:
         live.frames += 1

@@ -2,6 +2,7 @@ import array
 import math
 import struct
 import machine
+import time
 
 def init_float_array(size):
     return array.array('f', (0 for _ in range(size)))
@@ -36,7 +37,8 @@ class I2CDevice:
         """Read into buffer from the device without allocation."""
         if end is None:
             end = len(buf)
-        self.i2c.readfrom_into(self.device_address, buf, start=start, end=end)
+        # FIX 5: MicroPython's readfrom_into() has no start/end arguments
+        self.i2c.readfrom_into(self.device_address, memoryview(buf)[start:end])
 
     def write(self, buf):
         """Write buffer to the device."""
@@ -64,7 +66,7 @@ class I2CDevice:
 
 class MLX90640:
     """Interface to the MLX90640 temperature sensor."""
-    ee_data = init_int_array(834)
+    ee_data = init_int_array(832)   # FIX 4: EEPROM is 832 words (0x2400-0x273F)
     i2c_read_len = 128
     scale_alpha = 1e-06
     mlx90640_deviceid1 = 9223
@@ -132,11 +134,32 @@ class MLX90640:
         and calculate the temperature in C for each of 32x24 pixels. Placed
         into the 768-element array passed in!"""
         emissivity = 0.95
-        status = self._get_frame_data()
-        if status < 0:
-            raise RuntimeError('Frame data error')
-        tr = self._get_ta() - self.openair_ta_shift
-        self._calculate_to(emissivity, tr, framebuf)
+        # FIX 1: the sensor delivers each frame as two interleaved sub-pages (chess pattern).
+        # One _get_frame_data() call only returns ONE sub-page = 384 of the 768 pixels.
+        # The reference Adafruit/Melexis code reads both; without this, half of every
+        # "frame" was left over from the previous call (or never written at all).
+        for _ in range(2):
+            status = self._get_frame_data()
+            if status < 0:
+                raise RuntimeError('Frame data error')
+            tr = self._get_ta() - self.openair_ta_shift
+            self._calculate_to(emissivity, tr, framebuf)
+        # FIX 2: broken/outlier pixels are written as -273.15 °C; replace them with the
+        # mean of their valid neighbours so the classifier and CNN never see -273 °C.
+        self._fix_bad_pixels(framebuf)
+
+    def _fix_bad_pixels(self, frame):
+        for p in self.broken_pixels | self.outlier_pixels:
+            r, c = divmod(p, 32)
+            vals = []
+            for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                rr, cc = r + dr, c + dc
+                if 0 <= rr < 24 and 0 <= cc < 32:
+                    q = rr * 32 + cc
+                    if not self._is_pixel_bad(q):
+                        vals.append(frame[q])
+            if vals:
+                frame[p] = sum(vals) / len(vals)
 
     def _get_frame_data(self):
         data_ready = 0
@@ -325,7 +348,7 @@ class MLX90640:
             if self.ks_to[i] > 127:
                 self.ks_to[i] -= 256
             self.ks_to[i] /= ks_to_scale
-        self.ks_to[4] = -0.0
+        self.ks_to[4] = -0.0002   # matches reference (unused in the maths)
         offset_sp = [0] * 2
         alpha_sp = [0] * 2
         alpha_scale = ((self.ee_data[32] & 61440) >> 12) + 27
@@ -642,6 +665,7 @@ class MLX90640:
         cmd[3] = data & 255
         data_check = [0]
         self.i2c_device.write(cmd)
+        time.sleep_ms(1)          # FIX 3: settle time after a register write (reference driver)
         self._i2c_read_words(write_address, data_check)
 
     def _i2c_read_words(self, addr, buffer, *, end=None):

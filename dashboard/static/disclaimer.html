@@ -1,0 +1,314 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f6">
+  <title>Early Fire Detection and Monitoring System</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="identity">
+        <span class="eyebrow">OPERATIONS / ENVIRONMENTAL SAFETY</span>
+        <h1>Early Fire Detection and Monitoring System</h1>
+        <p>Real-time thermal surveillance and alarm management</p>
+      </div>
+      <div class="top-right">
+        <a href="/disclaimer" class="status status-warning prototype-tag"
+           title="Academic project - read the legal disclaimer">ACADEMIC PROTOTYPE</a>
+        <span id="connection" class="status status-off">Connecting</span>
+        <span id="clock" class="clock">--</span>
+      </div>
+    </header>
+
+    <div id="fireBanner" class="fire-banner"
+         role="alert" aria-live="assertive" hidden>
+      <strong>FIRE DETECTED — OPERATOR ACTION REQUIRED</strong>
+      <span>
+        Confirmed fire state reported by the sensing unit.
+        Follow site emergency procedures.
+      </span>
+    </div>
+
+    <div id="faultBanner" class="fault-banner" role="status" hidden>
+      SENSOR DATA STALE OR CONNECTION LOST — VERIFY DEVICE STATUS
+    </div>
+
+    <main>
+      <section class="overview" aria-label="System measurements">
+        <article class="metric">
+          <span class="metric-label">SYSTEM CONDITION</span>
+          <strong id="systemState" class="metric-value">UNKNOWN</strong>
+          <small id="classificationSource">
+            Awaiting device classification
+          </small>
+        </article>
+
+        <article class="metric">
+          <span class="metric-label">MAXIMUM THERMAL TEMPERATURE</span>
+          <strong class="metric-value">
+            <span id="maxTemp">—</span>
+            <span class="unit"> °C</span>
+          </strong>
+          <small>MLX90640 · hottest valid pixel</small>
+        </article>
+
+        <article class="metric">
+          <span class="metric-label">AMBIENT TEMPERATURE</span>
+          <strong class="metric-value">
+            <span id="ambientTemp">—</span>
+            <span class="unit"> °C</span>
+          </strong>
+          <small>DS18B20 · 1-Wire sensor</small>
+        </article>
+
+        <article class="metric">
+          <span class="metric-label">SUPPRESSION SYSTEM</span>
+          <strong id="suppression" class="metric-value metric-small">
+            UNKNOWN
+          </strong>
+          <small>Device-reported relay status only</small>
+        </article>
+      </section>
+
+      <div class="main-grid">
+        <section class="panel thermal-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">01 / PRIMARY SENSOR</span>
+              <h2>MLX90640 Thermal Camera</h2>
+            </div>
+            <span id="thermalHealth" class="status status-off">
+              NO DATA
+            </span>
+          </div>
+
+          <div class="thermal-wrap">
+            <canvas id="thermalCanvas" width="320" height="240"
+                    aria-label="Live 32 by 24 thermal temperature map">
+            </canvas>
+            <div id="thermalPlaceholder" class="thermal-placeholder">
+              Awaiting thermal frame from sensing unit
+            </div>
+          </div>
+
+          <div class="scale-row">
+            <span id="scaleMinLabel">20 °C</span>
+            <div class="thermal-scale"></div>
+            <span id="scaleMaxLabel">100 °C</span>
+          </div>
+
+          <div class="range-row">
+            <label>
+              Display minimum (°C)
+              <input id="scaleMin" type="number"
+                     min="-40" max="300" value="20">
+            </label>
+            <label>
+              Display maximum (°C)
+              <input id="scaleMax" type="number"
+                     min="-39" max="350" value="100">
+            </label>
+            <button id="applyScale" type="button"
+                    class="button button-neutral">
+              Apply range
+            </button>
+          </div>
+
+          <div class="sensor-details">
+            <div>
+              <span>Minimum</span>
+              <strong id="minTemp">—</strong>
+            </div>
+            <div>
+              <span>Average</span>
+              <strong id="meanTemp">—</strong>
+            </div>
+            <div>
+              <span>Valid pixels</span>
+              <strong id="validPixels">— / 768</strong>
+            </div>
+            <div>
+              <span>Hotspot location</span>
+              <strong id="hotspot">—</strong>
+            </div>
+            <div>
+              <span>Frame sequence</span>
+              <strong id="frameSeq">—</strong>
+            </div>
+            <div>
+              <span>Last thermal update</span>
+              <strong id="frameTime">—</strong>
+            </div>
+          </div>
+
+          <p id="pixelInspect" class="hint">
+            Move the pointer over the image to inspect
+            measured pixel temperatures.
+          </p>
+        </section>
+
+        <aside class="right-column">
+          <section class="panel alarm-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">02 / RESPONSE</span>
+                <h2>Alarm Management</h2>
+              </div>
+            </div>
+
+            <div id="alarmCondition" class="alarm-condition">
+              No fire alarm reported
+            </div>
+
+            <p id="alarmMessage" class="detail-text">
+              Awaiting current system telemetry.
+            </p>
+
+            <div class="alarm-controls">
+              <button id="enableAudio" type="button"
+                      class="button button-primary">
+                Enable Alarm Audio
+              </button>
+
+              <button id="killAlarm" type="button"
+                      class="button button-danger" disabled>
+                Kill Alarm — Silence
+              </button>
+            </div>
+
+            <div class="detail-list">
+              <div>
+                <span>Operator audio</span>
+                <strong id="audioStatus">NOT ENABLED</strong>
+              </div>
+              <div>
+                <span>Alarm acknowledgement</span>
+                <strong id="silenceStatus">NOT SILENCED</strong>
+              </div>
+              <div>
+                <span>Last telemetry</span>
+                <strong id="telemetryTime">—</strong>
+              </div>
+            </div>
+
+            <p class="safety-note">
+              Kill Alarm silences this browser only.
+              It does not clear the fire condition,
+              stop the device buzzer or control suppression.
+            </p>
+          </section>
+
+          <section class="panel sensor-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">03 / SECONDARY SENSOR</span>
+                <h2>DS18B20 Ambient Sensor</h2>
+              </div>
+              <span id="ambientHealth" class="status status-off">
+                NO DATA
+              </span>
+            </div>
+
+            <div class="ambient-reading">
+              <span id="ambientLarge">—</span>
+              <span>°C</span>
+            </div>
+
+            <p class="detail-text">
+              Ambient temperature provides a separate reference
+              for evaluating localised thermal activity.
+            </p>
+
+            <div class="detail-list">
+              <div>
+                <span>Sensor interface</span>
+                <strong>1-Wire</strong>
+              </div>
+              <div>
+                <span>Last ambient update</span>
+                <strong id="ambientTime">—</strong>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <section class="panel history-panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">04 / MEASUREMENTS</span>
+            <h2>Temperature History</h2>
+            <p>
+              Rolling live chart · maximum thermal
+              and ambient temperature
+            </p>
+          </div>
+          <div class="chart-key">
+            <span class="key-thermal">Thermal max</span>
+            <span class="key-ambient">Ambient</span>
+          </div>
+        </div>
+
+        <canvas id="trendCanvas"
+                aria-label="Recent thermal and ambient temperatures">
+        </canvas>
+      </section>
+
+      <section class="panel events-panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">05 / AUDIT</span>
+            <h2>Alarm and System Events</h2>
+            <p>
+              Server-recorded state transitions
+              and suppression reports
+            </p>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Category</th>
+                <th>Event</th>
+              </tr>
+            </thead>
+            <tbody id="eventsBody">
+              <tr>
+                <td colspan="3">No recorded events.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <img src="/static/uj_logo.png" alt="University of Johannesburg" class="footer-logo">
+        <div class="footer-author">
+          <strong>Aphiwe Elihle Mthembu</strong>
+          <span>Student number 223087197</span>
+          <span>Final Year Project · University of Johannesburg</span>
+        </div>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="https://appelirhsa.co.za" target="_blank" rel="noopener">Help · Log a ticket or request maintenance ↗</a>
+        <a href="/disclaimer">Legal disclaimer</a>
+        <a href="/record">Data capture</a>
+      </nav>
+      <div class="footer-meta">
+        <span>Early Fire Detection and Monitoring System</span>
+        <span>Academic prototype · Not a certified fire alarm panel</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

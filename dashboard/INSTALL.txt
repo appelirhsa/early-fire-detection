@@ -1,0 +1,28 @@
+DASHBOARD UPDATE - install on the AWS server
+============================================
+Copy these into your dashboard folder, replacing the old ones:
+
+  server.py                    your file + recorder hooks + /disclaimer route
+  recording.py                 NEW - data capture back-end
+  static/index.html            footer (UJ logo, name, links) + "Academic prototype" tag
+  static/style.css             footer, disclaimer and data-capture styles added
+  static/app.js                unchanged
+  static/disclaimer.html       NEW - legal disclaimer page
+  static/record_panel.html     NEW - data capture page
+  static/uj_logo.png           NEW - UJ logo (transparent background)
+
+Then, in the server's venv:
+  pip install numpy matplotlib
+  (add "numpy" and "matplotlib" to requirements.txt)
+
+Restart:
+  sudo systemctl restart early-fire-detection.service
+
+Pages:
+  /             dashboard
+  /record       data capture
+  /disclaimer   legal disclaimer
+Help / tickets link in the footer: https://appelirhsa.co.za
+
+Optional: set RECORD_KEY in the service environment so only you can start,
+stop or delete recordings:  Environment=RECORD_KEY=choose-a-word

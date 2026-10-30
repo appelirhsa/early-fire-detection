@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f6">
+  <title>Legal Disclaimer · Early Fire Detection and Monitoring System</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="identity">
+        <span class="eyebrow">LEGAL / ACADEMIC USE</span>
+        <h1>Legal Disclaimer</h1>
+        <p>Please read before using or relying on this system</p>
+      </div>
+      <div class="top-right">
+        <a href="/" class="button button-neutral page-link">← Back to dashboard</a>
+      </div>
+    </header>
+
+    <main class="doc">
+      <div class="doc-alert" role="note">
+        <strong>ACADEMIC PROJECT — NOT FOR PUBLIC OR IMMEDIATE USE</strong>
+        <span>
+          This system is a student prototype. It is not a certified fire detection,
+          alarm or suppression system and must not be relied on to protect people,
+          property or equipment.
+        </span>
+      </div>
+
+      <section class="panel doc-panel">
+        <div class="doc-section">
+          <span class="eyebrow">01 / PROJECT STATUS</span>
+          <h2>An academic project</h2>
+          <p>
+            The Early Fire Detection and Monitoring System was designed and built by
+            Aphiwe Elihle Mthembu (student number 223087197) as a Final Year Project in
+            the Department of Electrical and Electronic Engineering Science at the
+            University of Johannesburg (Project Investigation (Electrical) 4B). It exists
+            to demonstrate and evaluate engineering concepts for assessment and research.
+          </p>
+          <p>
+            The University of Johannesburg is named only as the institution at which the
+            work was carried out. The system is not a product of the university, and the
+            university has not endorsed, certified or approved it for any use.
+          </p>
+        </div>
+
+        <div class="doc-section">
+          <span class="eyebrow">02 / INTENDED USE</span>
+          <h2>Not intended for public or immediate use</h2>
+          <ul>
+            <li>The system has not been certified, approved or independently tested as a fire
+                detection, alarm or suppression system, and has not been assessed against
+                SANS 10139 or any other fire-safety standard.</li>
+            <li>It must not be used as the sole, primary or replacement means of detecting fire
+                or protecting life, property, data or equipment.</li>
+            <li>It must not replace or interfere with any certified fire detection, alarm or
+                suppression system already installed in a building or server room.</li>
+            <li>It is intended only for supervised demonstration, testing and evaluation by the
+                author and assessors.</li>
+          </ul>
+        </div>
+
+        <div class="doc-section">
+          <span class="eyebrow">03 / SUPPRESSION</span>
+          <h2>Experimental suppression output</h2>
+          <p>
+            The prototype can switch a relay intended to operate a small water-mist valve or a
+            stand-in device. Water near energised electrical equipment can cause electric shock,
+            short circuits and damage. The suppression output is a proof of concept only and must
+            not be connected to a building's suppression system, a mains water supply or live
+            equipment outside a supervised test.
+          </p>
+        </div>
+
+        <div class="doc-section">
+          <span class="eyebrow">04 / ACCURACY AND AVAILABILITY</span>
+          <h2>Readings and alerts may be wrong, late or missing</h2>
+          <ul>
+            <li>Temperatures come from a low-resolution 32 × 24 thermal sensor and an ambient
+                sensor, and may be inaccurate, especially for small or distant heat sources.</li>
+            <li>The fire classification combines fixed temperature thresholds with an experimental
+                machine-learning model trained on limited data. It can miss fires and raise false
+                alarms.</li>
+            <li>This dashboard depends on Wi-Fi, the internet and a cloud server. Alerts shown here
+                may be delayed or may not arrive at all, and the dashboard can only display what the
+                sensing unit reports.</li>
+          </ul>
+        </div>
+
+        <div class="doc-section">
+          <span class="eyebrow">05 / DATA</span>
+          <h2>Data collected</h2>
+          <p>
+            The system stores low-resolution thermal readings, ambient temperatures and event
+            records on the project server for monitoring, testing and model training. At 32 × 24
+            pixels, people appear only as warm shapes. Data is used solely for this academic project
+            and is not sold or shared with third parties.
+          </p>
+        </div>
+
+        <div class="doc-section">
+          <span class="eyebrow">06 / LIABILITY</span>
+          <h2>No warranty</h2>
+          <p>
+            The system, its hardware designs, software and this dashboard are provided "as is",
+            without warranty of any kind, express or implied, including fitness for a particular
+            purpose. To the fullest extent permitted by law, the author accepts no liability for any
+            loss, damage, injury or cost arising from the use of, or reliance on, the system or the
+            information it displays. Anyone who chooses to use it does so at their own risk.
+          </p>
+        </div>
+
+        <div class="doc-section">
+          <span class="eyebrow">07 / EMERGENCIES</span>
+          <h2>In a real fire</h2>
+          <p>
+            Do not wait for this system. Leave the area, raise the alarm and call emergency
+            services: <strong>10177</strong> (fire and ambulance, South Africa) or
+            <strong>112</strong> from a mobile phone. Follow your site's emergency procedures.
+          </p>
+        </div>
+
+        <div class="doc-section">
+          <span class="eyebrow">08 / CONTACT</span>
+          <h2>Help and maintenance</h2>
+          <p>
+            To report a fault, log a ticket or request maintenance, visit
+            <a href="https://appelirhsa.co.za" target="_blank" rel="noopener">appelirhsa.co.za</a>.
+          </p>
+        </div>
+
+        <p class="doc-updated">Last updated: 30 October 2026</p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <img src="/static/uj_logo.png" alt="University of Johannesburg" class="footer-logo">
+        <div class="footer-author">
+          <strong>Aphiwe Elihle Mthembu</strong>
+          <span>Student number 223087197</span>
+          <span>Final Year Project · University of Johannesburg</span>
+        </div>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="https://appelirhsa.co.za" target="_blank" rel="noopener">Help · Log a ticket or request maintenance ↗</a>
+        <a href="/disclaimer">Legal disclaimer</a>
+        <a href="/record">Data capture</a>
+      </nav>
+      <div class="footer-meta">
+        <span>Early Fire Detection and Monitoring System</span>
+        <span>Academic prototype · Not a certified fire alarm panel</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
