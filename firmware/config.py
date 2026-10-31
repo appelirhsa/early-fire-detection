@@ -10,7 +10,7 @@ ENABLE_WIFI = True   # set True once WiFi's USB-disconnect issue is resolved
 I2C_ID = 1
 I2C_SDA_PIN = 26
 I2C_SCL_PIN = 19
-I2C_FREQ_HZ = 900000          # MLX90640 supports up to 1MHz; 400kHz is a safe start
+I2C_FREQ_HZ = 400000          # MLX90640 supports up to 1MHz; 400kHz is a safe start
 MLX90640_I2C_ADDR = 0x33       # Default MLX90640 address
 
 # ---------------------------------------------------------------------------
@@ -49,9 +49,9 @@ WIFI_PASSWORD = "87654321"
 WIFI_CONNECT_TIMEOUT_S = 15
 WIFI_RECONNECT_BACKOFF_S = 5
 
-DASHBOARD_HOST = "223087197fyp.duckdns.org"   # IP of the machine running the Flask server
+DASHBOARD_HOST = "fyp.appelirhsa.co.za"   # IP of the machine running the Flask server
 DASHBOARD_FRAME_ENDPOINT = "/api/frame"
-DASHBOARD_PORT = 80
+DASHBOARD_PORT = 443
 DEVICE_API_TOKEN = "" 
 DASHBOARD_ENDPOINT = "/api/telemetry"
 DASHBOARD_POST_INTERVAL_S = 2

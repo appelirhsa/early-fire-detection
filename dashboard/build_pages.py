@@ -8,7 +8,7 @@ fetch the new files instead of an old cached copy.
 """
 from pathlib import Path
 
-ASSET_VERSION = "4"
+ASSET_VERSION = "6"
 OUT = Path(__file__).resolve().parent / "static"
 
 ICONS = {
@@ -16,12 +16,16 @@ ICONS = {
     "record": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg>',
     "settings": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
     "disclaimer": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="M12 8.5v4M12 15.5h.01"/></svg>',
+    "incidents": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z"/><path d="M14 3.5V8h4M9.5 12.5h5M9.5 16h5"/></svg>',
+    "health": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-6 4 12 2.5-6H21"/></svg>',
     "help": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 16.8h.01"/></svg>',
     "flame": '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.2 1-3.7 2.3-4.8.3 1.5 1.2 2.4 2.2 2.8C11 8.5 11 6 12 3z"/></svg>',
 }
 
 NAV = [
     ("dashboard", "/", "Dashboard"),
+    ("incidents", "/incidents", "Incidents"),
+    ("health", "/health", "System health"),
     ("record", "/record", "Data capture"),
     ("settings", "/settings", "Settings"),
     ("disclaimer", "/disclaimer", "Legal disclaimer"),
@@ -128,6 +132,12 @@ DASH_BODY = """      <div id="fireBanner" class="fire-banner" role="alert" aria-
         <span>Confirmed fire state reported by the sensing unit. Follow site emergency procedures.</span>
       </div>
 
+      <div id="rorBanner" class="ror-banner" role="alert" hidden>
+        <strong>RAPID TEMPERATURE RISE</strong>
+        <span id="rorBannerText">The hottest point is heating faster than the rate-of-rise limit.</span>
+        <a id="rorIncident" href="/incidents" hidden>View incident →</a>
+      </div>
+
       <div id="faultBanner" class="fault-banner" role="status" hidden>
         Sensor data stale or connection lost — verify device status.
       </div>
@@ -147,6 +157,11 @@ DASH_BODY = """      <div id="fireBanner" class="fire-banner" role="alert" aria-
           <span class="eyebrow">Ambient temperature</span>
           <strong class="stat-value"><span id="ambientTemp">—</span><span class="unit"> °C</span></strong>
           <small>DS18B20 · 1-Wire sensor</small>
+        </div>
+        <div class="stat">
+          <span class="eyebrow">Rate of rise</span>
+          <strong id="rorStat" class="stat-value"><span id="rorValue">—</span><span class="unit"> °C/min</span></strong>
+          <small id="rorLimit">Alarm above 8 °C/min</small>
         </div>
         <div class="stat">
           <span class="eyebrow">Suppression system</span>
@@ -216,6 +231,7 @@ DASH_BODY = """      <div id="fireBanner" class="fire-banner" role="alert" aria-
               <div><span>Operator audio</span><strong id="audioStatus">NOT ENABLED</strong></div>
               <div><span>Alarm acknowledgement</span><strong id="silenceStatus">NOT SILENCED</strong></div>
               <div><span>Last telemetry</span><strong id="telemetryTime">—</strong></div>
+              <div><span>Current incident</span><strong><a id="incidentLink" href="/incidents">None</a></strong></div>
             </div>
             <p class="safety-note">Kill alarm silences this browser only. It does not clear the fire condition, stop the device buzzer or control suppression.</p>
           </section>
@@ -243,14 +259,32 @@ DASH_BODY = """      <div id="fireBanner" class="fire-banner" role="alert" aria-
           <div>
             <span class="eyebrow">Measurements</span>
             <h2 class="card-title">Temperature history</h2>
-            <p class="card-sub">Rolling live chart · maximum thermal and ambient temperature</p>
+            <p class="card-sub">Stored on the server · choose the time range to view</p>
           </div>
           <div class="chart-key">
             <span class="key-thermal">Thermal max</span>
             <span class="key-ambient">Ambient</span>
           </div>
         </div>
-        <canvas id="trendCanvas" aria-label="Recent thermal and ambient temperatures"></canvas>
+        <div class="history-controls">
+          <div class="range-tabs" id="histRanges" role="group" aria-label="Time range">
+            <button type="button" data-span="300" aria-pressed="false">5 min</button>
+            <button type="button" data-span="900" aria-pressed="false">15 min</button>
+            <button type="button" data-span="3600" aria-pressed="false">1 h</button>
+            <button type="button" data-span="21600" aria-pressed="false">6 h</button>
+            <button type="button" data-span="86400" aria-pressed="false">24 h</button>
+            <button type="button" data-span="604800" aria-pressed="false">7 days</button>
+            <button type="button" data-span="2592000" aria-pressed="false">30 days</button>
+            <button type="button" data-span="custom" aria-pressed="false">Custom</button>
+          </div>
+          <form class="custom-range" id="histCustom" hidden>
+            <label>From <input class="input" type="datetime-local" id="histFrom" required></label>
+            <label>To <input class="input" type="datetime-local" id="histTo" required></label>
+            <button class="button button-primary" type="submit">Show</button>
+          </form>
+        </div>
+        <canvas id="trendCanvas" aria-label="Thermal and ambient temperature history"></canvas>
+        <p class="small-text" id="histStatus" aria-live="polite"></p>
       </section>
 
       <section class="card section">
@@ -272,6 +306,173 @@ DASH_BODY = """      <div id="fireBanner" class="fire-banner" role="alert" aria-
 DASH_ACTIONS = """          <a href="/disclaimer" class="status status-warning status-plain" title="Academic project — read the legal disclaimer">Academic prototype</a>
           <span id="connection" class="status status-off">Connecting</span>
           <span id="clock" class="clock">--</span>"""
+
+# ---------------------------------------------------------------- Incidents
+INC_BODY = """      <div id="openBanner" class="fire-banner fire-banner-static" role="status" hidden>
+        <strong>INCIDENT IN PROGRESS</strong>
+        <span id="openText"></span>
+        <a id="openLink" href="/incidents">Open live report →</a>
+      </div>
+
+      <section class="stat-strip stat-strip-4" aria-label="Incident summary">
+        <div class="stat">
+          <span class="eyebrow">Incidents recorded</span>
+          <strong id="statTotal" class="stat-value">—</strong>
+          <small>Since the log was started</small>
+        </div>
+        <div class="stat">
+          <span class="eyebrow">Last 24 hours</span>
+          <strong id="statDay" class="stat-value">—</strong>
+          <small>FIRE or rate-of-rise alarms</small>
+        </div>
+        <div class="stat">
+          <span class="eyebrow">Highest peak</span>
+          <strong class="stat-value"><span id="statPeak">—</span><span class="unit"> °C</span></strong>
+          <small>Hottest pixel during any incident</small>
+        </div>
+        <div class="stat">
+          <span class="eyebrow">Median suppression response</span>
+          <strong class="stat-value"><span id="statResponse">—</span><span class="unit"> s</span></strong>
+          <small>Incident start to fan on · 0 = already running</small>
+        </div>
+      </section>
+
+      <section class="card section">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">Audit</span>
+            <h2 class="card-title">Incident log</h2>
+            <p class="card-sub">Opened automatically on a device FIRE report or a rate-of-rise alarm; closed 10 s after the condition clears</p>
+          </div>
+          <a class="button" href="/api/incidents.csv" download>Export CSV</a>
+        </div>
+        <p id="loadError" class="form-error" hidden></p>
+        <div class="table-scroll table-tall">
+          <table>
+            <thead><tr><th>#</th><th>Started</th><th>Duration</th><th>Trigger</th><th>Peak</th><th>Max rise</th><th>Suppression</th><th></th></tr></thead>
+            <tbody id="incidentsBody"><tr><td colspan="8">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>"""
+
+INC_ACTIONS = """          <a class="button" href="/">← Back to dashboard</a>"""
+
+REPORT_BODY = """      <p id="reportError" class="form-error" hidden></p>
+      <div id="reportBody" class="report" hidden>
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <span class="eyebrow">Incident report</span>
+              <h2 id="reportTitle" class="card-title">Incident</h2>
+              <p id="reportSub" class="card-sub"></p>
+            </div>
+            <span id="reportStatus" class="status status-off">—</span>
+          </div>
+          <div id="summary" class="detail-list detail-list-wide"></div>
+        </section>
+
+        <div class="report-grid section">
+          <section class="card">
+            <div class="card-head">
+              <div>
+                <span class="eyebrow">Evidence</span>
+                <h2 class="card-title">Thermal frame at peak</h2>
+              </div>
+            </div>
+            <div id="snapWrap" hidden>
+              <canvas id="snapshot" class="snapshot" width="320" height="240" aria-label="Thermal frame captured at the peak temperature"></canvas>
+              <div class="scale-row">
+                <span id="snapLo">—</span>
+                <div class="thermal-scale"></div>
+                <span id="snapHi">—</span>
+              </div>
+              <p id="snapInfo" class="small-text"></p>
+            </div>
+            <p id="snapEmpty" class="small-text">No thermal frame was captured for this incident.</p>
+          </section>
+
+          <section class="card">
+            <div class="card-head">
+              <div>
+                <span class="eyebrow">Sequence</span>
+                <h2 class="card-title">Timeline</h2>
+              </div>
+            </div>
+            <ol id="timeline" class="timeline"></ol>
+          </section>
+        </div>
+
+        <section class="card section">
+          <div class="card-head">
+            <div>
+              <span class="eyebrow">Measurements</span>
+              <h2 class="card-title">Temperature during the incident</h2>
+              <p class="card-sub">Shaded area: incident active · from 1 min before to 1 min after</p>
+            </div>
+            <div class="chart-key">
+              <span class="key-thermal">Thermal max</span>
+              <span class="key-ambient">Ambient</span>
+            </div>
+          </div>
+          <canvas id="incidentChart" class="incident-chart" aria-label="Temperature during the incident"></canvas>
+        </section>
+
+        <p id="generated" class="small-text section"></p>
+      </div>"""
+
+REPORT_ACTIONS = """          <a id="prevLink" class="button no-print" href="#" hidden>← Previous</a>
+          <a id="nextLink" class="button no-print" href="#" hidden>Next →</a>
+          <button id="printReport" type="button" class="button button-primary no-print">Print / save as PDF</button>
+          <a class="button no-print" href="/incidents">All incidents</a>"""
+
+HEALTH_BODY = """      <p id="healthError" class="form-error" hidden></p>
+      <div class="health-top">
+        <span id="overall" class="status status-off">Checking…</span>
+        <a id="openIncident" class="button small-button" href="/incidents" hidden>View open incident →</a>
+        <span id="updated" class="small-text"></span>
+      </div>
+
+      <div class="health-grid">
+        <section class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Sensing unit</span><h2 class="card-title">Device link</h2></div>
+            <span id="deviceBadge" class="status status-off">—</span>
+          </div>
+          <div id="device" class="detail-list"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Network</span><h2 class="card-title">Data flow</h2></div>
+            <span id="flowBadge" class="status status-off">—</span>
+          </div>
+          <div id="flow" class="detail-list"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Measurement</span><h2 class="card-title">Sensors and alarms</h2></div>
+            <span id="sensorBadge" class="status status-off">—</span>
+          </div>
+          <div id="sensors" class="detail-list"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Reliability</span><h2 class="card-title">Availability</h2></div>
+            <span id="availBadge" class="status status-off">—</span>
+          </div>
+          <div class="avail-track" aria-hidden="true"><div id="availBar" class="avail-bar"></div></div>
+          <div id="avail" class="detail-list"></div>
+        </section>
+
+        <section class="card health-wide">
+          <div class="card-head">
+            <div><span class="eyebrow">Backend</span><h2 class="card-title">Server and storage</h2></div>
+          </div>
+          <div id="server" class="detail-list detail-list-wide"></div>
+        </section>
+      </div>"""
 
 # ---------------------------------------------------------------- Settings
 SETTINGS_BODY = """      <div class="settings stack">
@@ -761,6 +962,27 @@ def main():
                    "Real-time thermal surveillance and alarm management", DASH_ACTIONS),
             DASH_BODY,
             f'<script src="/static/app.js?v={ASSET_VERSION}"></script>\n'),
+        "incidents.html": page(
+            "Incidents · Early Fire Detection", "incidents",
+            header("Audit · Response", "Incidents",
+                   "Every fire or rapid-rise event, with a report you can print or export", INC_ACTIONS),
+            INC_BODY,
+            f'<script src="/static/shared.js?v={ASSET_VERSION}"></script>\n'
+            f'<script src="/static/incidents.js?v={ASSET_VERSION}"></script>\n'),
+        "report.html": page(
+            "Incident report · Early Fire Detection", "incidents",
+            header("Audit · Incident report", "Incident report",
+                   "Timeline, peak thermal frame and temperature record", REPORT_ACTIONS),
+            REPORT_BODY,
+            f'<script src="/static/shared.js?v={ASSET_VERSION}"></script>\n'
+            f'<script src="/static/report.js?v={ASSET_VERSION}"></script>\n'),
+        "health.html": page(
+            "System health · Early Fire Detection", "health",
+            header("Operations · Diagnostics", "System health",
+                   "Device link, data flow, sensors, availability and storage", BACK),
+            HEALTH_BODY,
+            f'<script src="/static/shared.js?v={ASSET_VERSION}"></script>\n'
+            f'<script src="/static/health.js?v={ASSET_VERSION}"></script>\n'),
         "settings.html": page(
             "Settings · Early Fire Detection", "settings",
             header("Preferences", "Settings", "Appearance and display options for this browser", BACK),
@@ -782,3 +1004,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

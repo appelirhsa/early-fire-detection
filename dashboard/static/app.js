@@ -1,11 +1,9 @@
-
 'use strict';
 
 const $ = id => document.getElementById(id);
 const W = 32;
 const H = 24;
 const STALE_MS = 6000;
-const HISTORY_LIMIT = 180;
 
 const app = {
   socket: null,
@@ -20,13 +18,13 @@ const app = {
   silenced: false,
   scaleMin: 20,
   scaleMax: 100,
-  history: [],
   events: [],
   audioContext: null,
   oscillator: null,
   gain: null,
   toneTimer: null,
-  audioEnabled: false
+  audioEnabled: false,
+  rorAlarm: false
 };
 
 const thermalCanvas = $('thermalCanvas');
@@ -189,14 +187,159 @@ function cssVar(name, fallback) {
   return v || fallback;
 }
 
-function addHistory(point) {
-  app.history.push(point);
+/* ---------------------------------------------------------------------------
+ * Temperature history — stored on the server, so it survives page refreshes.
+ * The operator picks the time range; "last N" ranges follow live data.
+ * ------------------------------------------------------------------------- */
+const HIST_TICK_STEPS_S = [10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200,
+  10800, 21600, 43200, 86400, 172800, 604800];
 
-  if (app.history.length > HISTORY_LIMIT) {
-    app.history.shift();
+const hist = {
+  mode: 'relative',   // 'relative' = last `span` seconds (live); 'absolute' = fixed from/to
+  span: 3600,         // seconds
+  start: 0,           // ms (absolute mode)
+  end: 0,             // ms (absolute mode)
+  bucketMs: 1000,
+  points: [],         // { t (ms), max, amb }
+  earliest: null,
+  loading: false,
+  error: '',
+  hoverX: null,
+  lastFetch: 0,
+  reqId: 0,
+  customOpen: false
+};
+
+function storeGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+
+function storeSet(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) { /* storage blocked */ }
+}
+
+function histWindow() {
+  if (hist.mode === 'relative') {
+    const end = Date.now();
+    return [end - hist.span * 1000, end];
+  }
+  return [hist.start, hist.end];
+}
+
+function histRefreshMs() {
+  return Math.min(300000, Math.max(5000, hist.span * 1000 / 100));
+}
+
+function fmtTime(ms, withSeconds) {
+  return new Date(ms).toLocaleTimeString(undefined, withSeconds
+    ? { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }
+    : { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function fmtDate(ms) {
+  return new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
+function fmtFull(ms) {
+  return `${fmtDate(ms)}, ${fmtTime(ms, true)}`;
+}
+
+function fmtTick(ms, spanMs) {
+  if (spanMs <= 15 * 60e3) return fmtTime(ms, true);
+  if (spanMs <= 36 * 3600e3) return fmtTime(ms, false);
+  if (spanMs <= 8 * 86400e3) return `${fmtDate(ms)} ${fmtTime(ms, false)}`;
+  return fmtDate(ms);
+}
+
+function fmtDuration(s) {
+  if (s < 90) return `${Math.round(s)} s`;
+  if (s < 5400) return `${Math.round(s / 60)} min`;
+  if (s < 172800) return `${+(s / 3600).toFixed(1)} h`;
+  return `${+(s / 86400).toFixed(1)} days`;
+}
+
+function toLocalInput(ms) {
+  const d = new Date(ms - new Date(ms).getTimezoneOffset() * 60000);
+  return d.toISOString().slice(0, 16);
+}
+
+function updateHistStatus() {
+  const [start, end] = histWindow();
+  let text;
+  if (hist.error) {
+    text = hist.error;
+  } else if (hist.loading && !hist.points.length) {
+    text = 'Loading history…';
+  } else {
+    text = `${fmtFull(start)} – ${hist.mode === 'relative' ? 'now' : fmtFull(end)}` +
+      ` · ${hist.points.length} points, one per ${fmtDuration(hist.bucketMs / 1000)}`;
+    if (hist.earliest) text += ` · stored since ${fmtFull(hist.earliest)}`;
+  }
+  $('histStatus').textContent = text;
+}
+
+async function loadHistory() {
+  const [start, end] = histWindow();
+  const width = trendCanvas.getBoundingClientRect().width || 800;
+  const points = Math.max(100, Math.min(1000, Math.round(width)));
+  const id = ++hist.reqId;
+  hist.loading = true;
+  hist.error = '';
+  updateHistStatus();
+  drawTrend();
+
+  try {
+    const r = await fetch(
+      `/api/history?start=${start / 1000}&end=${end / 1000}&points=${points}`,
+      { cache: 'no-store' }
+    );
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    if (id !== hist.reqId) return;          // a newer request replaced this one
+    hist.points = d.points.map(p => ({ t: p.t * 1000, max: p.max, amb: p.amb }));
+    hist.bucketMs = d.bucket_s * 1000;
+    hist.earliest = d.earliest ? d.earliest * 1000 : null;
+  } catch (err) {
+    if (id !== hist.reqId) return;
+    hist.error = `Could not load history (${err.message}).`;
   }
 
+  hist.loading = false;
+  hist.lastFetch = Date.now();
+  updateHistStatus();
   drawTrend();
+}
+
+/* Live frames extend a "last N" range immediately; the server re-condenses it periodically. */
+function addLivePoint(t, max, amb) {
+  if (hist.mode !== 'relative') return;
+  hist.points.push({ t, max, amb });
+  const cutoff = Date.now() - hist.span * 1000;
+  while (hist.points.length && hist.points[0].t < cutoff) hist.points.shift();
+  drawTrend();
+}
+
+function tickHistory() {
+  if (hist.mode !== 'relative') return;
+  drawTrend();
+  if (!hist.loading && Date.now() - hist.lastFetch > histRefreshMs()) loadHistory();
+}
+
+function setRangeButtons() {
+  document.querySelectorAll('#histRanges button').forEach(b => {
+    const pressed = b.dataset.span === 'custom'
+      ? hist.customOpen || hist.mode === 'absolute'
+      : !hist.customOpen && hist.mode === 'relative' && b.dataset.span === String(hist.span);
+    b.setAttribute('aria-pressed', String(pressed));
+  });
+  $('histCustom').hidden = !(hist.customOpen || hist.mode === 'absolute');
+}
+
+function initHistory() {
+  const saved = Number(storeGet('efd-history-span'));
+  if (Number.isFinite(saved) && saved > 0) hist.span = saved;
+  setRangeButtons();
+  loadHistory();
 }
 
 function ingestFrame(data) {
@@ -227,18 +370,53 @@ function ingestFrame(data) {
     updateAmbient(data.ambient_c, data.received_at);
   }
 
+  updateRateOfRise(data);
+
   if (recent(app.frameTime)) {
-    addHistory({
-      time: app.frameTime,
-      thermal: max,
-      ambient: finiteTemperature(data.ambient_c)
-        ? data.ambient_c
-        : null
-    });
+    addLivePoint(
+      app.frameTime,
+      max,
+      finiteTemperature(data.ambient_c) ? data.ambient_c : null
+    );
   }
 
   drawThermal();
   updateHealth();
+}
+
+/* Rate-of-rise alarm (computed by the server from the stored readings). */
+function updateRateOfRise(data) {
+  const rate = data.ror_c_per_min;
+  const limit = data.ror_threshold;
+  const alarm = Boolean(data.ror_alarm);
+  app.rorAlarm = alarm;
+
+  $('rorValue').textContent = Number.isFinite(rate) ? rate.toFixed(1) : '—';
+  $('rorStat').className = 'stat-value' + (alarm ? ' is-warning' : '');
+  if (Number.isFinite(limit)) {
+    $('rorLimit').textContent = `Alarm above ${limit} °C/min`;
+  }
+
+  $('rorBanner').hidden = !alarm || app.state === 'FIRE';
+  if (alarm) {
+    $('rorBannerText').textContent =
+      `The hottest point is rising ${Number.isFinite(rate) ? rate.toFixed(1) : '?'} °C/min ` +
+      `(limit ${limit} °C/min), before the fixed fire threshold is reached. Investigate now.`;
+  }
+  setIncident(data.incident_id);
+}
+
+function setIncident(id) {
+  const link = $('incidentLink');
+  if (id) {
+    link.textContent = `#${id} in progress →`;
+    link.href = `/incidents/report?id=${id}`;
+  } else {
+    link.textContent = 'None';
+    link.href = '/incidents';
+  }
+  $('rorIncident').hidden = !id;
+  if (id) $('rorIncident').href = `/incidents/report?id=${id}`;
 }
 
 function updateAmbient(value, receivedAt) {
@@ -265,12 +443,15 @@ function ingestTelemetry(data) {
     'not independently verified by dashboard';
 
   $('suppression').textContent = app.suppression
-    ? 'ACTIVE (REPORTED)'
-    : 'INACTIVE (REPORTED)';
+    ? 'ACTIVE'
+    : 'INACTIVE';
 
   if (data.ambient_c != null || !app.ambientTime) {
     updateAmbient(data.ambient_c, data.received_at);
   }
+
+  if ('incident_id' in data) setIncident(data.incident_id);
+  $('rorBanner').hidden = !app.rorAlarm || app.state === 'FIRE';
 
   if (previous !== 'FIRE' && app.state === 'FIRE') {
     app.silenced = false;
@@ -529,117 +710,240 @@ function connect() {
   socket.onerror = () => socket.close();
 }
 
-/* Plot measured maximum and ambient temperatures. */
+/* Plot the stored history on a real time axis (gaps where the device was offline). */
 function drawTrend() {
   const bounds = trendCanvas.getBoundingClientRect();
-
   if (!bounds.width || !bounds.height) return;
 
   const ratio = Math.min(devicePixelRatio || 1, 2);
-
   trendCanvas.width = Math.round(bounds.width * ratio);
   trendCanvas.height = Math.round(bounds.height * ratio);
-
   trendCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
   const width = bounds.width;
   const height = bounds.height;
-
   const left = 52;
-  const right = width - 18;
+  const right = width - 16;
   const top = 14;
-  const bottom = height - 25;
+  const bottom = height - 30;
+  const [start, end] = histWindow();
+  const spanMs = Math.max(1, end - start);
+  const font = getComputedStyle(document.body).fontFamily;
+  const grid = cssVar('--chart-grid', '#ececea');
+  const label = cssVar('--chart-label', '#66665f');
+  const thermalColour = cssVar('--chart-thermal', '#d4561a');
+  const ambientColour = cssVar('--chart-ambient', '#2f6fb2');
 
   trendCtx.clearRect(0, 0, width, height);
+  trendCtx.font = `12px ${font}`;
+  trendCtx.lineWidth = 1;
 
-  const values = app.history
-    .flatMap(p => [p.thermal, p.ambient])
-    .filter(finiteTemperature);
+  const visible = hist.points.filter(p => p.t >= start && p.t <= end);
+  const values = visible.flatMap(p => [p.max, p.amb]).filter(finiteTemperature);
+  let lo = values.length ? Math.min(...values) - 2 : 0;
+  let hi = values.length ? Math.max(...values) + 2 : 100;
+  if (hi - lo < 10) {
+    const mid = (hi + lo) / 2;
+    lo = mid - 5;
+    hi = mid + 5;
+  }
+  /* Round the axis to a tidy step (1, 2, 5, 10, 20 … °C) so labels are whole numbers */
+  const yStep = [1, 2, 5, 10, 20, 25, 50, 100, 200].find(st => (hi - lo) / st <= 5) || 500;
+  lo = Math.floor(lo / yStep) * yStep;
+  hi = Math.ceil(hi / yStep) * yStep;
+  const yRange = hi - lo;
+  const y = v => bottom - (v - lo) / yRange * (bottom - top);
+  const x = t => left + (t - start) / spanMs * (right - left);
 
-  const lo = values.length
-    ? Math.floor(Math.min(...values) / 10) * 10 - 5
-    : 0;
-
-  const hi = values.length
-    ? Math.ceil(Math.max(...values) / 10) * 10 + 5
-    : 100;
-
-  const range = Math.max(10, hi - lo);
-
-  const y = v =>
-    bottom - (v - lo) / range * (bottom - top);
-
-  trendCtx.font = `12px ${getComputedStyle(document.body).fontFamily}`;
-
-  for (let i = 0; i <= 4; i++) {
-    const val = lo + range * i / 4;
-    const yy = y(val);
-
-    trendCtx.strokeStyle = cssVar('--chart-grid', '#ececea');
+  /* Temperature grid */
+  trendCtx.textAlign = 'right';
+  for (let val = lo; val <= hi + 1e-9; val += yStep) {
+    const yy = Math.round(y(val)) + 0.5;
+    trendCtx.strokeStyle = grid;
     trendCtx.beginPath();
     trendCtx.moveTo(left, yy);
     trendCtx.lineTo(right, yy);
     trendCtx.stroke();
-
-    trendCtx.fillStyle = cssVar('--chart-label', '#66665f');
-    trendCtx.textAlign = 'right';
-    trendCtx.fillText(
-      `${val.toFixed(0)} °C`,
-      left - 8,
-      yy + 4
-    );
+    trendCtx.fillStyle = label;
+    trendCtx.fillText(`${val.toFixed(0)} °C`, left - 8, yy + 4);
   }
 
-  if (!app.history.length) {
-    trendCtx.fillStyle = cssVar('--chart-label', '#66665f');
+  /* Time axis */
+  const maxTicks = Math.max(2, Math.floor((right - left) / 110));
+  let step = HIST_TICK_STEPS_S[HIST_TICK_STEPS_S.length - 1] * 1000;
+  for (const s of HIST_TICK_STEPS_S) {
+    if (spanMs / (s * 1000) <= maxTicks) { step = s * 1000; break; }
+  }
+  const tz = -new Date(start).getTimezoneOffset() * 60000;
+  trendCtx.textAlign = 'center';
+  for (let t = Math.ceil((start + tz) / step) * step - tz; t <= end; t += step) {
+    const xx = Math.round(x(t)) + 0.5;
+    trendCtx.strokeStyle = grid;
+    trendCtx.beginPath();
+    trendCtx.moveTo(xx, top);
+    trendCtx.lineTo(xx, bottom);
+    trendCtx.stroke();
+    trendCtx.fillStyle = label;
+    trendCtx.fillText(fmtTick(t, spanMs), xx, bottom + 19);
+  }
+
+  /* Warning / fire thresholds */
+  trendCtx.save();
+  trendCtx.setLineDash([5, 4]);
+  trendCtx.textAlign = 'right';
+  for (const [v, text] of [[65, 'Fire 65 °C'], [45, 'Warning 45 °C']]) {
+    if (v <= lo || v >= hi) continue;
+    const yy = Math.round(y(v)) + 0.5;
+    trendCtx.strokeStyle = v === 65 ? cssVar('--fire', '#b42318') : cssVar('--warn', '#8a5300');
+    trendCtx.globalAlpha = 0.7;
+    trendCtx.beginPath();
+    trendCtx.moveTo(left, yy);
+    trendCtx.lineTo(right, yy);
+    trendCtx.stroke();
+    trendCtx.globalAlpha = 1;
+    trendCtx.fillStyle = trendCtx.strokeStyle;
+    trendCtx.fillText(text, right - 4, yy - 5);
+  }
+  trendCtx.restore();
+
+  if (!visible.length) {
+    trendCtx.fillStyle = label;
     trendCtx.textAlign = 'center';
     trendCtx.fillText(
-      'Temperature history will appear when live data arrives',
-      width / 2,
-      height / 2
+      hist.loading ? 'Loading history…' : hist.error || 'No readings in this time range',
+      (left + right) / 2,
+      (top + bottom) / 2
     );
     return;
   }
 
-  const x = i =>
-    left +
-    (right - left) * i / Math.max(1, HISTORY_LIMIT - 1);
-
-  const start = HISTORY_LIMIT - app.history.length;
-
-  for (const [key, colour] of [
-    ['thermal', cssVar('--chart-thermal', '#d4561a')],
-    ['ambient', cssVar('--chart-ambient', '#2f6fb2')]
-  ]) {
+  /* Series: break the line where the device was offline */
+  const gapMs = Math.max(3 * hist.bucketMs, 15000);
+  for (const [key, colour] of [['max', thermalColour], ['amb', ambientColour]]) {
     trendCtx.strokeStyle = colour;
+    trendCtx.fillStyle = colour;
     trendCtx.lineWidth = 2;
+    trendCtx.lineJoin = 'round';
     trendCtx.beginPath();
-
-    let started = false;
-
-    app.history.forEach((point, i) => {
-      if (!finiteTemperature(point[key])) {
-        started = false;
-        return;
-      }
-
-      const xx = x(start + i);
-      const yy = y(point[key]);
-
-      if (!started) {
-        trendCtx.moveTo(xx, yy);
-      } else {
-        trendCtx.lineTo(xx, yy);
-      }
-
-      started = true;
-    });
-
+    let prev = null;
+    for (const p of visible) {
+      const v = p[key];
+      if (!finiteTemperature(v)) { prev = null; continue; }
+      const xx = x(p.t);
+      const yy = y(v);
+      if (prev === null || p.t - prev > gapMs) trendCtx.moveTo(xx, yy);
+      else trendCtx.lineTo(xx, yy);
+      prev = p.t;
+    }
     trendCtx.stroke();
+    if (visible.length < 3) {
+      for (const p of visible) {
+        if (!finiteTemperature(p[key])) continue;
+        trendCtx.beginPath();
+        trendCtx.arc(x(p.t), y(p[key]), 3, 0, Math.PI * 2);
+        trendCtx.fill();
+      }
+    }
   }
+
+  /* Hover read-out */
+  if (hist.hoverX === null || hist.hoverX < left || hist.hoverX > right) return;
+  const t = start + (hist.hoverX - left) / (right - left) * spanMs;
+  let best = null;
+  let bestD = Infinity;
+  for (const p of visible) {
+    const d = Math.abs(p.t - t);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  if (!best || bestD > Math.max(gapMs, spanMs / 40)) return;
+
+  const bx = Math.round(x(best.t)) + 0.5;
+  trendCtx.strokeStyle = label;
+  trendCtx.lineWidth = 1;
+  trendCtx.beginPath();
+  trendCtx.moveTo(bx, top);
+  trendCtx.lineTo(bx, bottom);
+  trendCtx.stroke();
+  for (const [key, colour] of [['max', thermalColour], ['amb', ambientColour]]) {
+    if (!finiteTemperature(best[key])) continue;
+    trendCtx.fillStyle = colour;
+    trendCtx.beginPath();
+    trendCtx.arc(bx, y(best[key]), 4, 0, Math.PI * 2);
+    trendCtx.fill();
+  }
+
+  const lines = [
+    fmtFull(best.t),
+    `Thermal max  ${degrees(best.max)} °C`,
+    `Ambient      ${degrees(best.amb)} °C`
+  ];
+  trendCtx.font = `12px ${font}`;
+  const boxW = Math.max(...lines.map(l => trendCtx.measureText(l).width)) + 20;
+  const boxH = lines.length * 18 + 12;
+  let boxX = bx + 12;
+  if (boxX + boxW > right) boxX = bx - 12 - boxW;
+  const boxY = top + 6;
+  trendCtx.fillStyle = cssVar('--surface', '#ffffff');
+  trendCtx.strokeStyle = cssVar('--border-strong', '#d0d0cb');
+  trendCtx.beginPath();
+  trendCtx.rect(boxX + 0.5, boxY + 0.5, boxW, boxH);
+  trendCtx.fill();
+  trendCtx.stroke();
+  trendCtx.textAlign = 'left';
+  lines.forEach((l, i) => {
+    trendCtx.fillStyle = i === 0 ? cssVar('--text-3', '#66665f') : cssVar('--text', '#1a1a19');
+    trendCtx.fillText(l, boxX + 10, boxY + 20 + i * 18);
+  });
 }
 
 /* Operator controls */
+$('histRanges').addEventListener('click', event => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  if (button.dataset.span === 'custom') {
+    hist.customOpen = true;
+    const [start, end] = histWindow();
+    $('histFrom').value = toLocalInput(start);
+    $('histTo').value = toLocalInput(end);
+  } else {
+    hist.mode = 'relative';
+    hist.customOpen = false;
+    hist.span = Number(button.dataset.span);
+    storeSet('efd-history-span', hist.span);
+    hist.points = [];
+    loadHistory();
+  }
+  setRangeButtons();
+});
+
+$('histCustom').addEventListener('submit', event => {
+  event.preventDefault();
+  const start = new Date($('histFrom').value).getTime();
+  const end = new Date($('histTo').value).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start >= end) {
+    hist.error = 'Choose a start time that is before the end time.';
+    updateHistStatus();
+    return;
+  }
+  hist.mode = 'absolute';
+  hist.customOpen = false;
+  hist.start = start;
+  hist.end = Math.min(end, Date.now());
+  hist.points = [];
+  loadHistory();
+  setRangeButtons();
+});
+
+trendCanvas.addEventListener('pointermove', event => {
+  hist.hoverX = event.clientX - trendCanvas.getBoundingClientRect().left;
+  drawTrend();
+});
+
+trendCanvas.addEventListener('pointerleave', () => {
+  hist.hoverX = null;
+  drawTrend();
+});
+
 $('enableAudio').addEventListener('click', enableAudio);
 $('killAlarm').addEventListener('click', killAlarm);
 
@@ -722,6 +1026,7 @@ setInterval(() => {
   );
 
   updateHealth();
+  tickHistory();
 }, 1000);
 
 $('clock').textContent = new Date().toLocaleString(
@@ -751,5 +1056,5 @@ $('clock').textContent = new Date().toLocaleString(
 
 updateAlarm();
 updateHealth();
-drawTrend();
+initHistory();
 connect();

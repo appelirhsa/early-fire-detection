@@ -101,3 +101,4 @@ class AlertOutputs:
         self.red.value(0)
         self.amber.value(0)
         self.blue.value(0)
+        

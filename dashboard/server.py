@@ -1,4 +1,3 @@
-
 """Early Fire Detection and Monitoring System - monitoring backend.
 
 Receives measured data and device-reported state. Never commands suppression.
@@ -10,6 +9,7 @@ import json
 import math
 import os
 import sqlite3
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
@@ -20,10 +20,16 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 import recording  # data-capture page at /record (labelled training data)
+import monitoring  # incidents, rate-of-rise alarm, system health
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "alarm_events.sqlite3"
 DEVICE_TOKEN = os.environ.get("DEVICE_API_TOKEN", "")
+
+# Temperature history: one stored reading per second at most, kept for 90 days.
+READINGS_MIN_INTERVAL_S = 1.0
+READINGS_RETENTION_DAYS = int(os.environ.get("READINGS_RETENTION_DAYS", "90"))
+_readings_state = {"last": 0.0, "purged": 0.0}
 
 app = FastAPI(
     title="Early Fire Detection and Monitoring System",
@@ -31,6 +37,7 @@ app = FastAPI(
 )
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 app.include_router(recording.router)
+app.include_router(monitoring.router)
 
 
 def utc_now():
@@ -50,6 +57,12 @@ def initialize_db():
             category TEXT NOT NULL,
             message TEXT NOT NULL
         )""")
+        db.execute("""CREATE TABLE IF NOT EXISTS readings (
+            ts REAL NOT NULL,
+            max_c REAL,
+            ambient_c REAL
+        )""")
+        db.execute("CREATE INDEX IF NOT EXISTS readings_ts ON readings (ts)")
 
 
 def record_event(category, message):
@@ -58,6 +71,25 @@ def record_event(category, message):
             "INSERT INTO events (recorded_at, category, message) VALUES (?, ?, ?)",
             (utc_now(), category, message),
         )
+
+
+def record_reading(max_c, ambient_c):
+    """Store the frame's hottest pixel and ambient temperature (throttled to 1 per second)."""
+    now = time.time()
+    if now - _readings_state["last"] < READINGS_MIN_INTERVAL_S:
+        return
+    _readings_state["last"] = now
+    with sqlite3.connect(DB_PATH) as db:
+        db.execute(
+            "INSERT INTO readings (ts, max_c, ambient_c) VALUES (?, ?, ?)",
+            (now, max_c, ambient_c),
+        )
+        if now - _readings_state["purged"] > 3600:
+            db.execute(
+                "DELETE FROM readings WHERE ts < ?",
+                (now - READINGS_RETENTION_DAYS * 86400,),
+            )
+            _readings_state["purged"] = now
 
 
 def recent_events():
@@ -111,6 +143,11 @@ class Telemetry(BaseModel):
     ambient_c: float | None = None
     suppression_active: bool = False
     classification_source: str = "firmware"
+    # Optional device details for the health page (sent only if the firmware reports them)
+    firmware: str | None = None
+    uptime_s: float | None = None
+    rssi_dbm: float | None = None
+    free_memory: int | None = None
 
     @field_validator("max_thermal_c", "ambient_c")
     @classmethod
@@ -140,6 +177,8 @@ class LiveState:
 
 live = LiveState()
 initialize_db()
+monitoring.initialize()
+monitoring.health.viewer_count = lambda: len(live.connections)
 
 
 @app.get("/")
@@ -169,6 +208,43 @@ async def status():
     }
 
 
+@app.get("/api/history")
+async def history(start: float | None = None, end: float | None = None, points: int = 400):
+    """Stored temperature history between start and end (Unix seconds), condensed to
+    about `points` buckets. Each bucket keeps the HOTTEST pixel reading (so short
+    spikes are never averaged away) and the average ambient temperature."""
+    now = time.time()
+    end = now if end is None else end
+    start = end - 3600 if start is None else start
+    if end <= start:
+        raise HTTPException(status_code=400, detail="end must be after start")
+    if end - start > 366 * 86400:
+        raise HTTPException(status_code=400, detail="range longer than one year")
+    points = max(10, min(points, 2000))
+    bucket = max(1.0, (end - start) / points)
+    with sqlite3.connect(DB_PATH) as db:
+        rows = db.execute(
+            "SELECT CAST((ts - ?) / ? AS INTEGER) AS b, AVG(ts), MAX(max_c), AVG(ambient_c) "
+            "FROM readings WHERE ts >= ? AND ts <= ? GROUP BY b ORDER BY b",
+            (start, bucket, start, end),
+        ).fetchall()
+        earliest = db.execute("SELECT MIN(ts) FROM readings").fetchone()[0]
+    return {
+        "start": start,
+        "end": end,
+        "bucket_s": bucket,
+        "earliest": earliest,
+        "points": [
+            {
+                "t": round(r[1], 3),
+                "max": None if r[2] is None else round(r[2], 2),
+                "amb": None if r[3] is None else round(r[3], 2),
+            }
+            for r in rows
+        ],
+    }
+
+
 @app.get("/api/events")
 async def events():
     return {"events": recent_events()}
@@ -192,8 +268,19 @@ async def receive_frame(
     })
 
     recording.add_frame(data)  # saves the frame if a capture session is running
+    record_reading(data["max_c"], frame.ambient_c)  # temperature history for the chart
+    monitoring.on_frame(data)  # rate of rise, incidents, health (adds ror_* fields)
 
     async with live.lock:
+        previous_frame = live.latest_frame
+        if data["ror_alarm"] and not (previous_frame and previous_frame.get("ror_alarm")):
+            record_event("RATE OF RISE",
+                         f"Rapid temperature rise: {data['ror_c_per_min']} °C/min "
+                         f"(alarm at {data['ror_threshold']:g} °C/min)")
+            await live.broadcast({"type": "events", "events": recent_events()})
+        elif previous_frame and previous_frame.get("ror_alarm") and not data["ror_alarm"]:
+            record_event("RATE OF RISE", "Temperature rise returned to normal")
+            await live.broadcast({"type": "events", "events": recent_events()})
         live.frames += 1
         data["sequence"] = live.frames
         live.latest_frame = data
@@ -211,6 +298,7 @@ async def receive_telemetry(
 
     data = telemetry.model_dump()
     data["received_at"] = utc_now()
+    monitoring.on_telemetry(data)  # incidents and health
 
     async with live.lock:
         previous = live.latest_telemetry
@@ -258,3 +346,4 @@ async def thermal_websocket(socket: WebSocket):
 
     finally:
         live.connections.discard(socket)
+        

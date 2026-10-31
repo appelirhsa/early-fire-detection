@@ -7,7 +7,9 @@ import ds18x20
 import config  # Central system configuration
 import state_classifier  # Threshold classification system (OBJ03)
 from sensors.mlx90640 import MLX90640
-from dashboard_client import post_thermal_frame, post_telemetry
+from dashboard_client import post_thermal_frame, post_telemetry, connection_stats, last_error
+from alerts import AlertOutputs
+from suppression import FanController
 
 # ---------------------------------------------------------------------------
 # Settings used by this file. Each one can be overridden by adding the same
@@ -22,6 +24,8 @@ MLX_REFRESH_CODE = getattr(config, "MLX90640_REFRESH_CODE", 3)
 TELEMETRY_INTERVAL_MS = getattr(config, "TELEMETRY_INTERVAL_MS", 3000)
 # Print a timing summary every N frames.
 TIMING_SUMMARY_EVERY = getattr(config, "TIMING_SUMMARY_EVERY", 10)
+
+FIRMWARE_VERSION = "v5 - fan suppression output + alarms + keep-alive uploads (2026-10-31)"
 
 
 def connect_wifi():
@@ -39,6 +43,13 @@ def connect_wifi():
     wlan.active(False)
     time.sleep(2)
     wlan.active(True)
+    # Turn off Wi-Fi power saving: the radio otherwise dozes between packets,
+    # adding delay to every upload. (0xa11140 = performance mode, no power save.)
+    try:
+        wlan.config(pm=0xa11140)
+        print("Wi-Fi power saving disabled")
+    except Exception as e:
+        print("Could not disable Wi-Fi power saving:", e)
     time.sleep(3)
 
     if wlan.isconnected():
@@ -108,7 +119,7 @@ class LoopTimer:
                 self.max[s] = v
         self.n += 1
 
-    def report_if_due(self, every):
+    def report_if_due(self, every, connections=None):
         if self.n < every:
             return
         elapsed_s = time.ticks_diff(time.ticks_ms(), self.window_start) / 1000
@@ -119,6 +130,8 @@ class LoopTimer:
         for s in self.STAGES:
             print("  {:<11} avg {:>6} ms   max {:>6} ms".format(
                 s, self.sums[s] // self.n, self.max[s]))
+        if connections is not None:
+            print("  connections opened so far: {} (1 = connection is being reused)".format(connections))
         print("-" * 72)
         self.__init__()
 
@@ -149,6 +162,15 @@ def run_thermal_stream():
     """
     print("Target Dashboard Host:", config.DASHBOARD_HOST)
 
+    # 0. Local alarm outputs (buzzer + LEDs) with a short self-test
+    alerts = AlertOutputs()
+    alerts.self_test()
+    alerts.set_wifi(True)
+
+    # Suppression / extraction fan (relay on GP11, or MOSFET in PWM mode)
+    fan = FanController()
+    fan_percent = 0
+
     # 1. Initialize MLX90640 Thermal Sensor
     print("Initializing MLX90640 sensor...")
     try:
@@ -157,6 +179,8 @@ def run_thermal_stream():
         print("Camera ready.")
     except Exception as e:
         print("MLX90640 Sensor Initialization Failed:", e)
+        alerts.set_sensor_fault(True)
+        fan.stop()
         return
 
     # The fixed driver (with _fix_bad_pixels) already merges both sub-pages per call.
@@ -192,16 +216,19 @@ def run_thermal_stream():
     last_ambient_poll = 0
     last_state = None
     last_telemetry_ms = 0
+    last_fan_on = False
     timer = LoopTimer()
 
     print("Starting live stream with timing...")
     while True:
         if not wlan.isconnected():
+            alerts.set_wifi(False)
             print("Wi-Fi lost! Attempting recovery...")
             if not connect_wifi():
                 print("Could not reconnect. Retrying in 5 seconds...")
                 time.sleep(5)
                 continue
+            alerts.set_wifi(True)
 
         t = {}
         loop_start = time.ticks_ms()
@@ -228,6 +255,7 @@ def run_thermal_stream():
             print("Frame read error:", e)
             frame = None
         t["read"] = time.ticks_diff(time.ticks_ms(), t0)
+        alerts.set_sensor_fault(frame is None)
 
         if frame is None:
             print("Incomplete frame - skipped (read {} ms)".format(t["read"]))
@@ -241,6 +269,10 @@ def run_thermal_stream():
         t0 = time.ticks_ms()
         max_thermal = round(max(valid), 1)
         current_state = state_classifier.classify(max_thermal, ambient_temp)
+        # Local alarm first: buzzer + red LED react before any network upload.
+        alerts.set_state(current_state)
+        # Suppression fan: off / slow / fast, scaled with fire intensity.
+        fan_percent = fan.update(current_state, max_thermal)
         t["classify"] = time.ticks_diff(time.ticks_ms(), t0)
         count += 1
 
@@ -253,34 +285,66 @@ def run_thermal_stream():
         t0 = time.ticks_ms()
         telemetry_ok = None
         if (current_state != last_state
+                or (fan_percent > 0) != last_fan_on
                 or time.ticks_diff(t0, last_telemetry_ms) >= TELEMETRY_INTERVAL_MS):
             telemetry_ok = post_telemetry(
                 state=current_state,
                 max_thermal_c=max_thermal,
                 ambient_c=ambient_temp,
-                suppression_active=False
+                suppression_active=fan_percent > 0
             )
             last_state = current_state
+            last_fan_on = fan_percent > 0
             last_telemetry_ms = t0
         t["post_telem"] = time.ticks_diff(time.ticks_ms(), t0)
 
         t["total"] = time.ticks_diff(time.ticks_ms(), loop_start)
         timer.add(t)
 
-        print("[{}] {} | max {} C | amb {} C | read {} ms | frame {} ms ({}) | telem {} ms ({}) | loop {} ms".format(
-            count, current_state, max_thermal, ambient_temp,
+        print("[{}] {} | max {} C | amb {} C | fan {} % | read {} ms | frame {} ms ({}) | telem {} ms ({}) | loop {} ms".format(
+            count, current_state, max_thermal, ambient_temp, fan_percent,
             t["read"],
             t["post_frame"], "ok" if frame_ok else "FAIL",
             t["post_telem"], "-" if telemetry_ok is None else ("ok" if telemetry_ok else "FAIL"),
             t["total"]))
 
-        timer.report_if_due(TIMING_SUMMARY_EVERY)
+        if not frame_ok or telemetry_ok is False:
+            print("   upload problem:", last_error())
+
+        timer.report_if_due(TIMING_SUMMARY_EVERY, connection_stats())
+
+
+STARTUP_DELAY_S = getattr(config, "STARTUP_DELAY_S", 3)
+
+
+def startup_window():
+    """
+    Gives VS Code / MicroPico a few seconds to break in (Ctrl+C) before the
+    stream loop starts. Holding the BOOTSEL button during this countdown also
+    skips main.py, so the board can always be reached for uploads.
+    Returns False if start-up should be skipped.
+    """
+    print("Starting in {} s - press Ctrl+C (or hold BOOTSEL) to stop and upload files".format(STARTUP_DELAY_S))
+    for _ in range(STARTUP_DELAY_S * 10):
+        try:
+            if rp2.bootsel_button():
+                print("BOOTSEL held - main.py stopped. Board is free for uploads.")
+                return False
+        except AttributeError:
+            pass                      # older firmware without bootsel_button()
+        time.sleep_ms(100)
+    return True
 
 
 def main():
     """
     The main boot execution sequence.
     """
+    print("=" * 60)
+    print("main.py", FIRMWARE_VERSION)
+    print("=" * 60)
+    if not startup_window():
+        return
     try:
         led = machine.Pin("LED", machine.Pin.OUT)
         led.on()
@@ -298,3 +362,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>System health · Early Fire Detection</title>
+  <script src="/static/theme.js?v=6"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="/static/style.css?v=6">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <a class="brand" href="/">
+      <span class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.2 1-3.7 2.3-4.8.3 1.5 1.2 2.4 2.2 2.8C11 8.5 11 6 12 3z"/></svg></span>
+      <span><span class="brand-name">Early Fire Detection</span><span class="brand-sub">Monitoring system</span></span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <span class="eyebrow nav-label">Menu</span>
+      <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+      <a href="/incidents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z"/><path d="M14 3.5V8h4M9.5 12.5h5M9.5 16h5"/></svg>Incidents</a>
+      <a href="/health" class="is-active" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-6 4 12 2.5-6H21"/></svg>System health</a>
+      <a href="/record"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg>Data capture</a>
+      <a href="/settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Settings</a>
+      <a href="/disclaimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="M12 8.5v4M12 15.5h.01"/></svg>Legal disclaimer</a>
+      <a href="https://appelirhsa.co.za" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 16.8h.01"/></svg>Help &amp; tickets<span class="external">↗</span></a>
+    </nav>
+    <div class="sidebar-note">
+      <strong>Academic prototype</strong>
+      <span>Not a certified fire alarm panel. Do not rely on it to protect people or property.</span>
+    </div>
+  </aside>
+  <div class="content">
+    <header class="page-header">
+      <div class="page-header-inner">
+        <div>
+          <span class="eyebrow">Operations · Diagnostics</span>
+          <h1 class="page-title">System health</h1>
+          <p class="page-sub">Device link, data flow, sensors, availability and storage</p>
+        </div>
+        <div class="header-actions">
+          <a href="/" class="button">← Back to dashboard</a>
+        </div>
+      </div>
+    </header>
+    <main class="page-body">
+      <p id="healthError" class="form-error" hidden></p>
+      <div class="health-top">
+        <span id="overall" class="status status-off">Checking…</span>
+        <a id="openIncident" class="button small-button" href="/incidents" hidden>View open incident →</a>
+        <span id="updated" class="small-text"></span>
+      </div>
+
+      <div class="health-grid">
+        <section class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Sensing unit</span><h2 class="card-title">Device link</h2></div>
+            <span id="deviceBadge" class="status status-off">—</span>
+          </div>
+          <div id="device" class="detail-list"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Network</span><h2 class="card-title">Data flow</h2></div>
+            <span id="flowBadge" class="status status-off">—</span>
+          </div>
+          <div id="flow" class="detail-list"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Measurement</span><h2 class="card-title">Sensors and alarms</h2></div>
+            <span id="sensorBadge" class="status status-off">—</span>
+          </div>
+          <div id="sensors" class="detail-list"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Reliability</span><h2 class="card-title">Availability</h2></div>
+            <span id="availBadge" class="status status-off">—</span>
+          </div>
+          <div class="avail-track" aria-hidden="true"><div id="availBar" class="avail-bar"></div></div>
+          <div id="avail" class="detail-list"></div>
+        </section>
+
+        <section class="card health-wide">
+          <div class="card-head">
+            <div><span class="eyebrow">Backend</span><h2 class="card-title">Server and storage</h2></div>
+          </div>
+          <div id="server" class="detail-list detail-list-wide"></div>
+        </section>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <img src="/static/uj_logo.png" alt="University of Johannesburg" class="footer-logo" width="132" height="36">
+          <div class="footer-author">
+            <strong>Aphiwe Elihle Mthembu</strong>
+            <span>Student number 223087197</span>
+            <span>Final Year Project · University of Johannesburg</span>
+          </div>
+        </div>
+        <nav class="footer-links" aria-label="Footer">
+          <a href="https://appelirhsa.co.za" target="_blank" rel="noopener">Help · Log a ticket or request maintenance ↗</a>
+          <a href="/disclaimer">Legal disclaimer</a>
+          <a href="/settings">Settings</a>
+        </nav>
+        <div class="footer-meta">
+          <span>Early Fire Detection and Monitoring System</span>
+          <span>Academic prototype · Not a certified fire alarm panel</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+</div>
+<script src="/static/shared.js?v=6"></script>
+<script src="/static/health.js?v=6"></script>
+</body>
+</html>

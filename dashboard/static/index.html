@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Early Fire Detection and Monitoring System</title>
-  <script src="/static/theme.js?v=4"></script>
+  <script src="/static/theme.js?v=6"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
-  <link rel="stylesheet" href="/static/style.css?v=4">
+  <link rel="stylesheet" href="/static/style.css?v=6">
 </head>
 <body>
 <div class="app">
@@ -20,6 +20,8 @@
     <nav class="nav" aria-label="Main">
       <span class="eyebrow nav-label">Menu</span>
       <a href="/" class="is-active" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+      <a href="/incidents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z"/><path d="M14 3.5V8h4M9.5 12.5h5M9.5 16h5"/></svg>Incidents</a>
+      <a href="/health"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-6 4 12 2.5-6H21"/></svg>System health</a>
       <a href="/record"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg>Data capture</a>
       <a href="/settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Settings</a>
       <a href="/disclaimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="M12 8.5v4M12 15.5h.01"/></svg>Legal disclaimer</a>
@@ -47,12 +49,18 @@
     </header>
     <main class="page-body">
       <div id="fireBanner" class="fire-banner" role="alert" aria-live="assertive" hidden>
-        <strong>FIRE DETECTED — OPERATOR ACTION REQUIRED</strong>
+        <strong>FIRE DETECTED: OPERATOR ACTION REQUIRED</strong>
         <span>Confirmed fire state reported by the sensing unit. Follow site emergency procedures.</span>
       </div>
 
+      <div id="rorBanner" class="ror-banner" role="alert" hidden>
+        <strong>RAPID TEMPERATURE RISE</strong>
+        <span id="rorBannerText">The hottest point is heating faster than the rate-of-rise limit.</span>
+        <a id="rorIncident" href="/incidents" hidden>View incident →</a>
+      </div>
+
       <div id="faultBanner" class="fault-banner" role="status" hidden>
-        Sensor data stale or connection lost — verify device status.
+        Sensor data stale or connection lost; verify device status.
       </div>
 
       <section class="stat-strip" aria-label="System measurements">
@@ -70,6 +78,11 @@
           <span class="eyebrow">Ambient temperature</span>
           <strong class="stat-value"><span id="ambientTemp">—</span><span class="unit"> °C</span></strong>
           <small>DS18B20 · 1-Wire sensor</small>
+        </div>
+        <div class="stat">
+          <span class="eyebrow">Rate of rise</span>
+          <strong id="rorStat" class="stat-value"><span id="rorValue">—</span><span class="unit"> °C/min</span></strong>
+          <small id="rorLimit">Alarm above 8 °C/min</small>
         </div>
         <div class="stat">
           <span class="eyebrow">Suppression system</span>
@@ -133,12 +146,13 @@
             <p id="alarmMessage" class="detail-text">Awaiting current system telemetry.</p>
             <div class="alarm-controls">
               <button id="enableAudio" type="button" class="button button-primary button-lg">Enable alarm audio</button>
-              <button id="killAlarm" type="button" class="button button-danger button-lg" disabled>Kill alarm — silence</button>
+              <button id="killAlarm" type="button" class="button button-danger button-lg" disabled>Kill alarm, silence</button>
             </div>
             <div class="detail-list">
               <div><span>Operator audio</span><strong id="audioStatus">NOT ENABLED</strong></div>
               <div><span>Alarm acknowledgement</span><strong id="silenceStatus">NOT SILENCED</strong></div>
               <div><span>Last telemetry</span><strong id="telemetryTime">—</strong></div>
+              <div><span>Current incident</span><strong><a id="incidentLink" href="/incidents">None</a></strong></div>
             </div>
             <p class="safety-note">Kill alarm silences this browser only. It does not clear the fire condition, stop the device buzzer or control suppression.</p>
           </section>
@@ -166,14 +180,32 @@
           <div>
             <span class="eyebrow">Measurements</span>
             <h2 class="card-title">Temperature history</h2>
-            <p class="card-sub">Rolling live chart · maximum thermal and ambient temperature</p>
+            <p class="card-sub">Stored on the server · choose the time range to view</p>
           </div>
           <div class="chart-key">
             <span class="key-thermal">Thermal max</span>
             <span class="key-ambient">Ambient</span>
           </div>
         </div>
-        <canvas id="trendCanvas" aria-label="Recent thermal and ambient temperatures"></canvas>
+        <div class="history-controls">
+          <div class="range-tabs" id="histRanges" role="group" aria-label="Time range">
+            <button type="button" data-span="300" aria-pressed="false">5 min</button>
+            <button type="button" data-span="900" aria-pressed="false">15 min</button>
+            <button type="button" data-span="3600" aria-pressed="false">1 h</button>
+            <button type="button" data-span="21600" aria-pressed="false">6 h</button>
+            <button type="button" data-span="86400" aria-pressed="false">24 h</button>
+            <button type="button" data-span="604800" aria-pressed="false">7 days</button>
+            <button type="button" data-span="2592000" aria-pressed="false">30 days</button>
+            <button type="button" data-span="custom" aria-pressed="false">Custom</button>
+          </div>
+          <form class="custom-range" id="histCustom" hidden>
+            <label>From <input class="input" type="datetime-local" id="histFrom" required></label>
+            <label>To <input class="input" type="datetime-local" id="histTo" required></label>
+            <button class="button button-primary" type="submit">Show</button>
+          </form>
+        </div>
+        <canvas id="trendCanvas" aria-label="Thermal and ambient temperature history"></canvas>
+        <p class="small-text" id="histStatus" aria-live="polite"></p>
       </section>
 
       <section class="card section">
@@ -215,6 +247,6 @@
     </footer>
   </div>
 </div>
-<script src="/static/app.js?v=4"></script>
+<script src="/static/app.js?v=6"></script>
 </body>
 </html>
