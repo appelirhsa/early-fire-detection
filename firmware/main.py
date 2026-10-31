@@ -1,5 +1,6 @@
 import network
 import time
+import gc
 import machine
 import rp2
 import onewire
@@ -25,7 +26,8 @@ TELEMETRY_INTERVAL_MS = getattr(config, "TELEMETRY_INTERVAL_MS", 3000)
 # Print a timing summary every N frames.
 TIMING_SUMMARY_EVERY = getattr(config, "TIMING_SUMMARY_EVERY", 10)
 
-FIRMWARE_VERSION = "v5 - fan suppression output + alarms + keep-alive uploads (2026-10-31)"
+FIRMWARE_VERSION = "v5.1 - fan suppression + health reporting (2026-10-31)"
+BOOT_TIME_S = time.time()   # for uptime (time.time() counts from boot on the Pico)
 
 
 def connect_wifi():
@@ -287,11 +289,19 @@ def run_thermal_stream():
         if (current_state != last_state
                 or (fan_percent > 0) != last_fan_on
                 or time.ticks_diff(t0, last_telemetry_ms) >= TELEMETRY_INTERVAL_MS):
+            try:
+                rssi = wlan.status("rssi")      # Wi-Fi signal strength in dBm
+            except Exception:
+                rssi = None
             telemetry_ok = post_telemetry(
                 state=current_state,
                 max_thermal_c=max_thermal,
                 ambient_c=ambient_temp,
-                suppression_active=fan_percent > 0
+                suppression_active=fan_percent > 0,
+                firmware=FIRMWARE_VERSION.split(" - ")[0],
+                rssi_dbm=rssi,
+                uptime_s=time.time() - BOOT_TIME_S,
+                free_memory=gc.mem_free()
             )
             last_state = current_state
             last_fan_on = fan_percent > 0

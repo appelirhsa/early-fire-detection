@@ -216,12 +216,26 @@ def _num(v):
     return "null" if v is None else "{:.1f}".format(float(v))
 
 
-def post_telemetry(state, max_thermal_c, ambient_c, suppression_active):
-    """Posts the device state. True on HTTP 2xx. Never raises."""
+def _text(v):
+    """JSON string (or null) for short device text such as the firmware version."""
+    if v is None:
+        return "null"
+    return '"' + str(v).replace("\\", "/").replace('"', "'") + '"'
+
+
+def _int(v):
+    return "null" if v is None else str(int(v))
+
+
+def post_telemetry(state, max_thermal_c, ambient_c, suppression_active,
+                   firmware=None, rssi_dbm=None, uptime_s=None, free_memory=None):
+    """Posts the device state (plus optional health details). True on HTTP 2xx. Never raises."""
     body = ('{{"state":"{}","max_thermal_c":{},"ambient_c":{},'
-            '"suppression_active":{},"classification_source":"firmware"}}').format(
+            '"suppression_active":{},"classification_source":"firmware",'
+            '"firmware":{},"rssi_dbm":{},"uptime_s":{},"free_memory":{}}}').format(
         state, _num(max_thermal_c), _num(ambient_c),
-        "true" if suppression_active else "false")
+        "true" if suppression_active else "false",
+        _text(firmware), _int(rssi_dbm), _int(uptime_s), _int(free_memory))
     status = _client.post_json(config.DASHBOARD_ENDPOINT, body, _auth_header())
     return 200 <= status < 300
 

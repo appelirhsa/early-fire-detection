@@ -5,6 +5,14 @@ function kv(label, value, cls = '') {
   return `<div><span>${esc(label)}</span><strong class="${cls}">${esc(value)}</strong></div>`;
 }
 
+/* Typical Wi-Fi signal bands (dBm). */
+function signalQuality(dbm) {
+  if (dbm >= -60) return 'Excellent';
+  if (dbm >= -70) return 'Good';
+  if (dbm >= -80) return 'Fair';
+  return 'Weak';
+}
+
 function setBadge(id, ok, okText, badText, warn = false) {
   const el = $(id);
   el.textContent = ok ? okText : badText;
@@ -29,7 +37,11 @@ function render(h) {
     kv('Reported state', d.state || '—', d.state === 'FIRE' ? 'text-fire' : d.state === 'WARNING' ? 'text-warn' : ''),
     kv('Suppression / fan', d.suppression_active == null ? '—' : d.suppression_active ? 'Active' : 'Inactive'),
     kv('Firmware version', d.reported.firmware || 'Not reported by device'),
-    kv('Wi-Fi signal', isNum(d.reported.rssi_dbm) ? `${d.reported.rssi_dbm} dBm` : 'Not reported by device'),
+    kv('Wi-Fi signal', isNum(d.reported.rssi_dbm)
+      ? `${d.reported.rssi_dbm} dBm · ${signalQuality(d.reported.rssi_dbm)}` : 'Not reported by device',
+      isNum(d.reported.rssi_dbm) && d.reported.rssi_dbm < -80 ? 'text-warn' : ''),
+    kv('Device uptime', isNum(d.reported.uptime_s) ? fmtDur(d.reported.uptime_s) : 'Not reported by device'),
+    kv('Free memory on device', isNum(d.reported.free_memory) ? fmtBytes(d.reported.free_memory) : 'Not reported by device'),
   ].join('');
 
   const flowOk = d.online && isNum(fps) && fps >= 0.5;
