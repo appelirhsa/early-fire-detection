@@ -10,9 +10,14 @@ const app = {
   connected: false,
   retryMs: 1000,
   frame: null,
-  frameTime: 0,
+  frameTime: 0,      // server timestamp of the latest frame (for display and the chart)
   ambientTime: 0,
   telemetryTime: 0,
+  // When THIS browser last received each kind of data. Freshness is judged on these,
+  // so a difference between the PC clock and the server clock cannot make live data look stale.
+  frameSeen: 0,
+  ambientSeen: 0,
+  telemetrySeen: 0,
   state: 'UNKNOWN',
   suppression: null,
   silenced: false,
@@ -353,6 +358,7 @@ function ingestFrame(data) {
 
   app.frame = data;
   app.frameTime = timestamp(data.received_at);
+  app.frameSeen = Date.now();
   $('thermalPlaceholder').hidden = true;
 
   const max = Math.max(...valid);
@@ -372,7 +378,7 @@ function ingestFrame(data) {
 
   updateRateOfRise(data);
 
-  if (recent(app.frameTime)) {
+  if (app.frameTime) {
     addLivePoint(
       app.frameTime,
       max,
@@ -421,6 +427,7 @@ function setIncident(id) {
 
 function updateAmbient(value, receivedAt) {
   app.ambientTime = timestamp(receivedAt);
+  if (finiteTemperature(value)) app.ambientSeen = Date.now();
 
   $('ambientTemp').textContent = degrees(value);
   $('ambientLarge').textContent = degrees(value);
@@ -434,6 +441,7 @@ function ingestTelemetry(data) {
 
   app.state = data.state || 'UNKNOWN';
   app.telemetryTime = timestamp(data.received_at);
+  app.telemetrySeen = Date.now();
   app.suppression = Boolean(data.suppression_active);
 
   $('telemetryTime').textContent = localTime(data.received_at);
@@ -635,11 +643,11 @@ function renderEvents() {
 }
 
 function updateHealth() {
-  setHealth('thermalHealth', recent(app.frameTime));
+  setHealth('thermalHealth', recent(app.frameSeen));
 
   setHealth(
     'ambientHealth',
-    recent(app.ambientTime) &&
+    recent(app.ambientSeen) &&
     $('ambientTemp').textContent !== '—'
   );
 
@@ -650,11 +658,21 @@ function updateHealth() {
   $('connection').className =
     `status ${app.connected ? 'status-on' : 'status-off'}`;
 
-  $('faultBanner').hidden =
-    app.connected &&
-    recent(app.frameTime) &&
-    recent(app.telemetryTime) &&
-    recent(app.ambientTime);
+  /* Say exactly what is missing, instead of one generic warning. */
+  const problems = [];
+  if (!app.connected) {
+    problems.push('connection to the server lost');
+  } else {
+    if (!recent(app.frameSeen)) problems.push('no thermal frames');
+    if (!recent(app.telemetrySeen)) problems.push('no device status (telemetry)');
+    if (!recent(app.ambientSeen)) problems.push('no ambient (DS18B20) reading');
+  }
+  $('faultBanner').hidden = problems.length === 0;
+  if (problems.length) {
+    const text = problems.join(', ');
+    $('faultBanner').textContent =
+      `${text[0].toUpperCase()}${text.slice(1)} in the last ${STALE_MS / 1000} s. Check the sensing unit.`;
+  }
 }
 
 /* Reconnect automatically if the network connection drops. */

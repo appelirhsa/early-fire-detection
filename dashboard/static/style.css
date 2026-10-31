@@ -713,6 +713,66 @@ td .button { color: var(--text); }
   .incident-chart { width: 100%; }
 }
 
+/* ---------- Enlargeable cards ---------- */
+
+.card.has-expand { position: relative; }
+.card.has-expand > .card-head { padding-right: 40px; }
+.card-expand {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  z-index: 2;
+}
+.card-expand svg { width: 16px; height: 16px; }
+.card-expand:hover { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+.card-expand:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+.card-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(10, 12, 16, .55); }
+.card-backdrop[hidden] { display: none; }
+body.card-open { overflow: hidden; }
+
+.card.is-expanded {
+  position: fixed;
+  inset: 24px;
+  z-index: 1001;
+  margin: 0;
+  max-width: none;
+  overflow: auto;
+  padding: 24px 28px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .35);
+}
+.card.is-expanded > .card-expand { position: fixed; top: 38px; right: 40px; background: var(--surface-2); border-color: var(--border); color: var(--text); }
+.card.is-expanded .thermal-wrap { max-height: none; width: min(100%, calc((100vh - 360px) * 4 / 3)); min-width: 280px; margin: 0 auto; }
+.card.is-expanded .scale-row,
+.card.is-expanded .range-row,
+.card.is-expanded .kv-grid,
+.card.is-expanded .hint { max-width: min(100%, calc((100vh - 360px) * 4 / 3)); margin-left: auto; margin-right: auto; }
+.card.is-expanded #trendCanvas,
+.card.is-expanded .incident-chart { height: calc(100vh - 280px); min-height: 280px; }
+.card.is-expanded .snapshot { width: min(100%, calc((100vh - 240px) * 4 / 3)); margin: 0 auto 4px; }
+.card.is-expanded .table-scroll { max-height: none; }
+.card.is-expanded .ambient-reading { font-size: 28px; }
+.card.is-expanded .ambient-reading span:first-child { font-size: 120px; line-height: 132px; }
+
+@media (max-width: 560px) {
+  .card.is-expanded { inset: 0; border-radius: 0; padding: 16px; }
+  .card.is-expanded > .card-expand { top: 12px; right: 12px; }
+  .card.is-expanded .thermal-wrap { width: 100%; min-width: 0; }
+}
+
+@media print { .card-backdrop { display: none !important; } }
+
 /* ---------- Footer (every page) ---------- */
 
 .site-footer { margin-top: 32px; border-top: 1px solid var(--border); background: var(--surface); }

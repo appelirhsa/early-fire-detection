@@ -121,6 +121,6 @@ async function load() {
 
 $('printReport').addEventListener('click', () => window.print());
 window.addEventListener('resize', drawChart);
-window.addEventListener('themechange', drawChart);
+document.addEventListener('themechange', drawChart);
 window.addEventListener('beforeprint', drawChart);
 load();

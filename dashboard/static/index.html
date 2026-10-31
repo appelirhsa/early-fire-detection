@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Early Fire Detection and Monitoring System</title>
-  <script src="/static/theme.js?v=6"></script>
+  <script src="/static/theme.js?v=8"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
-  <link rel="stylesheet" href="/static/style.css?v=6">
+  <link rel="stylesheet" href="/static/style.css?v=8">
 </head>
 <body>
 <div class="app">
@@ -60,7 +60,7 @@
       </div>
 
       <div id="faultBanner" class="fault-banner" role="status" hidden>
-        Sensor data stale or connection lost; verify device status.
+        Sensor data stale or connection lost, verify device status.
       </div>
 
       <section class="stat-strip" aria-label="System measurements">
@@ -146,7 +146,7 @@
             <p id="alarmMessage" class="detail-text">Awaiting current system telemetry.</p>
             <div class="alarm-controls">
               <button id="enableAudio" type="button" class="button button-primary button-lg">Enable alarm audio</button>
-              <button id="killAlarm" type="button" class="button button-danger button-lg" disabled>Kill alarm, silence</button>
+              <button id="killAlarm" type="button" class="button button-danger button-lg" disabled>Kill alarm — silence</button>
             </div>
             <div class="detail-list">
               <div><span>Operator audio</span><strong id="audioStatus">NOT ENABLED</strong></div>
@@ -247,6 +247,7 @@
     </footer>
   </div>
 </div>
-<script src="/static/app.js?v=6"></script>
+<script src="/static/expand.js?v=8"></script>
+<script src="/static/app.js?v=8"></script>
 </body>
 </html>

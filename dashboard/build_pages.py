@@ -8,7 +8,7 @@ fetch the new files instead of an old cached copy.
 """
 from pathlib import Path
 
-ASSET_VERSION = "6"
+ASSET_VERSION = "8"
 OUT = Path(__file__).resolve().parent / "static"
 
 ICONS = {
@@ -121,6 +121,7 @@ def page(title, active, hdr, body, tail=""):
 {FOOTER}
   </div>
 </div>
+<script src="/static/expand.js?v={ASSET_VERSION}"></script>
 {tail}</body>
 </html>
 """
